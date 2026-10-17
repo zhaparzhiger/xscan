@@ -56,6 +56,16 @@ violations:
       - "a handbag and a phone lying on the cashier desk"
       - "food and a drink on the cashier desk next to money"
 
+  cash_handling:
+    title: "Нарушение порядка работы с наличными клиента"
+    observed: "деньги клиента пересчитываются или убираются после его ухода либо вне его присутствия, остаются лежать открыто или передаются мимо рабочего места"
+    why: "операции с наличными клиента проводятся на рабочем месте кассира в присутствии клиента"
+    document: cash_rules
+    # точный пункт не сверен по тексту — ссылаемся на акт без пункта (ТЗ это допускает), ничего не выдумываем
+    clause: null
+    clip_prompts:
+      - "a cashier counting banknotes after the client has left"
+
   improper_handover:
     title: "Нарушение порядка передачи ценностей (инкассация)"
     observed: "сумка/пакет с ценностями передаётся вне кассовой зоны или на виду у третьих лиц"

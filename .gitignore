@@ -13,3 +13,6 @@ weights/
 models/
 .idea/
 .vscode/
+
+# доступы для жюри — только локально
+*.local.txt

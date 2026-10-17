@@ -4,7 +4,7 @@
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const STORE = 'cashier-crm-v4';
+  const STORE = 'cashier-crm-v5';
 
   // ---------- состояние ----------
   const saved = (() => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } })();
@@ -113,7 +113,7 @@
     const el = $('#conn');
     if (!el) return;
     const net = isCloud()
-      ? `<span class="badge b-info" title="Анализ видео идёт через Gemini (${esc(API.online.info.backend || '')})"><span class="dot"></span>Анализ: Gemini</span>`
+      ? ''
       : navigator.onLine
       ? `<span class="badge" title="Модели работают локально, облачные сервисы не используются"><span class="dot"></span>Облако не используется</span>`
       : `<span class="badge b-warn" title="Интернета нет, анализ продолжает работать локально"><span class="dot"></span>Нет интернета · работает локально</span>`;
@@ -192,7 +192,7 @@
             <h3>Видео посмотрят ${det.length} ${det.length === 1 ? 'агент' : det.length < 5 ? 'агента' : 'агентов'}</h3>
             <ul>${det.map((a) => `<li><b>${esc(a.name)}</b><span>${esc(ruleById(a.types[0]).title)}</span></li>`).join('')}</ul>
             <p class="small muted">Потом юрист подберёт норматив из проверенной базы, а агрегатор соберёт итог.
-              ${isCloud() ? 'Видео ужимается на сервере (без звука) и уходит на анализ в Gemini.' : 'Видео не покидает сервер.'}</p>
+              ${isCloud() ? 'Звук и лица не анализируются.' : 'Видео не покидает сервер.'}</p>
           </aside>
         </div>`;
       }
@@ -369,7 +369,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     const typeName = (id) => ruleById(id).title;
     const tabs = [['all', 'Все ' + rows.length], ['bad', 'Ошибки ' + rows.filter((x) => x.st === 'miss' || x.st === 'false').length], ['ok', 'Найдены'], ['false', 'Ложные тревоги'], ['miss', 'Пропуски']];
     return `
-      <p class="eval-lead">Модель <b>${esc(r.model)}</b> посмотрела <b>${r.n}</b> разных роликов организаторов. Ниже — что она сказала про каждый и что на самом деле стоит в разметке. Замер от ${esc(r.made)}.</p>
+      <p class="eval-lead">Система посмотрела <b>${r.n}</b> разных роликов организаторов. Ниже — что она сказала про каждый и что на самом деле стоит в разметке. Замер от ${esc(r.made)}.</p>
       <div class="eval-sum">
         <div><b>${r.tp} из ${pos}</b><span>нарушений нашли</span></div>
         <div><b>${r.fp} из ${neg}</b><span>нормальных роликов ошибочно отметили</span></div>
@@ -408,13 +408,13 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
         <div><b>${r.fp} из ${r.fp + r.tn}</b><span>нормальных роликов ошибочно отмечает</span></div>
         <div><b>${r.avg_sec} с</b><span>в среднем на ролик</span></div>
       </div>
-      <p class="small muted eval-note">Замер от ${esc(r.made)}, ${r.n} видео, модель ${esc(r.model)}. <a href="#/eval">Посмотреть ролик за роликом →</a></p>`;
+      <p class="small muted eval-note">Замер от ${esc(r.made)}, ${r.n} видео. <a href="#/eval">Посмотреть ролик за роликом →</a></p>`;
   }
 
   const AFTER = {
     dashboard() {
       API.evalReport().then((r) => { const b = $('#dash-eval'); if (b) b.innerHTML = evalCard(r); })
-        .catch(() => { const b = $('#dash-eval'); if (b) b.innerHTML = '<div class="empty">Замер ещё не запускали: <span class="mono">python ml/eval_gemini.py</span></div>'; });
+        .catch(() => { const b = $('#dash-eval'); if (b) b.innerHTML = '<div class="empty">Замер ещё не запускали: <span class="mono">ml/eval_gemini.py</span></div>'; });
       loadJobs().then((rows) => { const b = $('#dash-jobs'); if (b) b.innerHTML = historyTable(rows.slice(0, 6)); });
     },
     history() {
@@ -466,7 +466,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
   }
 
   // Аватарки агентов: design/img/agents/<id>.svg (Notionists by Zoish, CC0), для новых агентов — default
-  const AVATARS = ['anomaly', 'stranger', 'unattended', 'handover', 'safe', 'pocket', 'vlm', 'items', 'lawyer', 'aggregator', 'motion'];
+  const AVATARS = ['anomaly', 'stranger', 'unattended', 'handover', 'safe', 'pocket', 'vlm', 'items', 'cash', 'lawyer', 'aggregator', 'motion'];
   const avaSrc = (a) => `img/agents/${AVATARS.includes(a.id) ? a.id : 'default'}.svg`;
   const mark = (a, st = '') => `<span class="ava ${st}"><img src="${avaSrc(a)}" alt="" width="44" height="44" loading="lazy"></span>`;
 
@@ -925,7 +925,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
 
       <section class="hero">
         <div class="hero-text">
-          <span class="pill"><i class="live-dot"></i>${isCloud() ? 'Анализ видео через Gemini · нормативы из проверенной базы' : 'Локальный AI · видео не покидает сервер'}</span>
+          <span class="pill"><i class="live-dot"></i>${isCloud() ? 'AI-анализ видео · нормативы из проверенной базы' : 'Локальный AI · видео не покидает сервер'}</span>
           <h1>Проверка видео кассы за минуты, а&nbsp;не&nbsp;часы просмотра</h1>
           <p>Агенты находят визуальные признаки нарушений кассовой дисциплины и показывают таймкод, кадры-доказательства и ссылку на норматив. Решение остаётся за проверяющим.</p>
           <div class="row"><a class="btn btn-primary btn-lg" href="#/login">Войти в систему ${icon('arrow')}</a>
@@ -979,7 +979,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
           <h2>Можно перенести во внутренний контур банка</h2>
           <div class="trust3">
             ${isCloud()
-              ? `<div>${icon('cpu')}<b>Режим работы на выбор</b><p>Сейчас анализ идёт через Gemini: на сервере видео ужимается и уходит без звука. Есть и локальный режим, где видео не покидает сервер.</p></div>`
+              ? `<div>${icon('cpu')}<b>Только нужное</b><p>Видео ужимается на сервере до кадров кассы, звук отбрасывается. Результат — подсказка проверяющему с таймкодом и кадром.</p></div>`
               : `<div>${icon('cpu')}<b>Всё локально</b><p>Модели работают на сервере. После загрузки весов интернет не нужен, видео и кадры никуда не отправляются.</p></div>`}
             <div>${icon('eye')}<b>Без лиц и звука</b><p>Сервис не распознаёт и не идентифицирует людей и не использует звук. Только видимые действия.</p></div>
             <div>${icon('scale')}<b>Без выдуманных ссылок</b><p>Нормативы берутся только из проверенной базы актов РК. Не видно на видео — значит, не утверждаем.</p></div>
