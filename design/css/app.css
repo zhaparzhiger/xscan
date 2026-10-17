@@ -694,3 +694,21 @@ h1, h2, h3, h4 { letter-spacing: -.02em; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* вход: форма строго по центру экрана и целиком влезает без скролла */
+.auth-main { height: 100vh; padding: 24px 40px; align-items: center; }
+.auth-box { gap: 18px; }
+.auth-head { gap: 4px; }
+.auth-logo { width: 60px; margin-bottom: 4px; }
+.auth-head h1 { font-size: 28px; }
+.auth-card { padding: 26px 28px; gap: 14px; }
+.ifield .input { height: 44px; }
+@media (max-height: 820px) {
+  .auth-box { gap: 12px; }
+  .auth-logo { width: 48px; }
+  .auth-head h1 { font-size: 24px; }
+  .auth-card { padding: 20px 24px; gap: 10px; }
+  .auth-card h2 { font-size: 18px; margin: 0; }
+  .demo-box { padding: 10px 14px; }
+}
+@media (max-height: 680px) { .auth-head p { display: none; } .auth-logo { width: 40px; } }
