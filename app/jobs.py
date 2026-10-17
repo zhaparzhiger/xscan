@@ -2,6 +2,7 @@
 import json
 import logging
 import threading
+import time
 import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -53,6 +54,35 @@ def submit(video_path: Path) -> str:
     botapi.create_task(job_id, video_path)  # видео сразу доступно внешним агентам
     _executor.submit(_run, job_id, video_path)
     return job_id
+
+
+def save_meta(job_id: str, file_name: str) -> None:
+    """Имя исходного файла и время загрузки — рядом с задачей, отдельно от ответа по схеме ТЗ."""
+    meta = {"file": file_name, "created": time.time()}
+    (config.JOBS_DIR / f"{job_id}.meta").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+
+def list_jobs(limit: int = 200) -> list[dict]:
+    """Краткая сводка по всем проверкам на сервере (для истории в интерфейсе), новые сверху."""
+    out = []
+    for p in config.JOBS_DIR.glob("*.json"):
+        try:
+            job = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if "status" not in job:
+            continue
+        m = p.with_suffix(".meta")
+        meta = json.loads(m.read_text(encoding="utf-8")) if m.exists() else {}
+        out.append({
+            "job_id": job["job_id"], "status": job["status"], "verdict": job.get("verdict"),
+            "file": meta.get("file") or f"{job['job_id']}.mov",
+            "created": meta.get("created") or p.stat().st_mtime,
+            "duration_sec": job.get("duration_sec"), "processing_sec": job.get("processing_sec"),
+            "types": [v.get("type_id") for v in job.get("violations", [])],
+        })
+    out.sort(key=lambda j: j["created"], reverse=True)
+    return out[:limit]
 
 
 def new_job_id() -> str:

@@ -4,7 +4,7 @@ import secrets
 import shutil
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, Response, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel
@@ -37,7 +37,9 @@ def _store_upload(file: UploadFile) -> str:
     if dst.stat().st_size > config.MAX_UPLOAD_MB * 1024 * 1024:
         dst.unlink()
         raise HTTPException(status_code=413, detail="file too large")
-    return jobs.submit(dst)
+    job_id = jobs.submit(dst)
+    jobs.save_meta(job_id, name)
+    return job_id
 
 
 def _job_or_404(job_id: str) -> dict:
@@ -109,9 +111,34 @@ def ui_analyze(file: UploadFile = File(...)):
     return {"job_id": _store_upload(file), "status": "processing"}
 
 
+@app.get("/ui/jobs", dependencies=[Depends(auth.require_session)])
+def ui_jobs():
+    return {"jobs": jobs.list_jobs()}
+
+
+@app.get("/ui/jobs/{job_id}/video", dependencies=[Depends(auth.require_session)])
+def ui_job_video(job_id: str):
+    """Исходное видео проверки — чтобы открыть старый отчёт из истории вместе с плеером."""
+    if not job_id.isalnum():
+        raise HTTPException(404, "not found")
+    files = list(config.UPLOAD_DIR.glob(f"{job_id}.*"))
+    if not files:
+        raise HTTPException(404, "видео удалено")
+    return FileResponse(files[0], media_type="video/quicktime")
+
+
 @app.get("/ui/jobs/{job_id}", dependencies=[Depends(auth.require_session)])
 def ui_job(job_id: str):
     return {**_job_or_404(job_id), "agent_findings": botapi.findings_for_job(job_id)}
+
+
+@app.get("/ui/eval", dependencies=[Depends(auth.require_session)])
+def ui_eval():
+    """Последний замер на открытом датасете (его пишет ml/eval_gemini.py) — для страницы «Замер»."""
+    f = config.DATA_DIR / "eval_report.json"
+    if not f.exists():
+        raise HTTPException(404, "замер ещё не запускали: python ml/eval_gemini.py")
+    return Response(f.read_text(encoding="utf-8"), media_type="application/json")
 
 
 # ---------- Bot API для агентов-процессов (app/botapi.py) ----------

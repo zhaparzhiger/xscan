@@ -48,6 +48,20 @@ window.API = (() => {
     return r.json();
   }
 
+  async function jobsList() {
+    const r = await fetch('/ui/jobs', { credentials: 'same-origin' });
+    if (r.status === 401) { window.dispatchEvent(new Event('unauthorized')); throw new Error('нужен вход'); }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return (await r.json()).jobs;
+  }
+
+  async function evalReport() {
+    const r = await fetch('/ui/eval', { credentials: 'same-origin' });
+    if (r.status === 401) { window.dispatchEvent(new Event('unauthorized')); throw new Error('нужен вход'); }
+    if (!r.ok) throw new Error('Замер ещё не запускали');
+    return r.json();
+  }
+
   async function config() {
     const r = await fetch('/ui/config');
     return r.ok ? r.json() : {};
@@ -130,7 +144,7 @@ window.API = (() => {
     };
   }
 
-  return { online, health, analyze, job, me, config, login, logout, demoAnalyze };
+  return { online, health, analyze, job, me, config, login, logout, demoAnalyze, evalReport, jobsList };
 })();
 
 window.fmt = (sec) => {

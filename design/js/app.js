@@ -4,13 +4,13 @@
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const STORE = 'cashier-crm-v3';
+  const STORE = 'cashier-crm-v4';
 
   // ---------- состояние ----------
   const saved = (() => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } })();
   const S = {
-    style: saved.style || '1torg',
-    mode: saved.mode || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    style: '1torg',
+    mode: 'light',
     agents: saved.agents || structuredClone(SEED.agents),
     trainings: saved.trainings || structuredClone(SEED.trainings),
     session: [],          // проверки этой сессии (с полным результатом)
@@ -18,6 +18,7 @@
     train: null,          // текущее обучение
     agentTab: 'all',
     histFilter: 'all',
+    evalFilter: 'bad',
   };
   const persist = () => {
     try { localStorage.setItem(STORE, JSON.stringify({ style: S.style, mode: S.mode, agents: S.agents, trainings: S.trainings })); } catch { /* приватный режим */ }
@@ -47,6 +48,7 @@
     ['agents', 'Агенты', 'bot'],
     ['training', 'Обучение', 'brain'],
     ['rules', 'Нормативы', 'book'],
+    ['eval', 'Замер', 'chart'],
     ['history', 'История', 'history'],
     ['settings', 'Настройки', 'settings'],
   ];
@@ -56,8 +58,9 @@
     agents: ['Агенты', 'Каждый агент отвечает за свой тип риска'],
     training: ['Обучение', 'Новые агенты учатся на ваших видео'],
     rules: ['Нормативы', 'Связь «нарушение → документ → пункт»'],
+    eval: ['Замер на 40 видео', 'Как система отработала на роликах организаторов, ролик за роликом'],
     history: ['История проверок', 'Все загруженные видео'],
-    settings: ['Настройки', 'Внешний вид, API и пороги'],
+    settings: ['Настройки', 'API и пороги'],
   };
 
   function shell() {
@@ -93,7 +96,6 @@
             <div class="spacer"></div>
             <div class="search">${icon('search')}<input class="input" placeholder="Поиск по проверкам и агентам"></div>
             <span id="conn"></span>
-            <button class="btn btn-ghost btn-icon" data-act="mode" aria-label="Тема">${icon(S.mode === 'dark' ? 'sun' : 'moon')}</button>
           </header>
           <main class="content" id="page"></main>
         </div>
@@ -104,10 +106,15 @@
   const navItem = ([id, label, ic], count = '') =>
     `<a href="#/${id}" data-nav="${id}">${icon(ic)}<span>${label}</span>${count ? `<span class="count">${count}</span>` : ''}</a>`;
 
+  // Облачный режим (ANALYZER=gemini): видео уходит в Gemini — так и пишем, без обещаний «всё локально»
+  const isCloud = () => API.online.info?.analyzer === 'gemini';
+
   function renderConn() {
     const el = $('#conn');
     if (!el) return;
-    const net = navigator.onLine
+    const net = isCloud()
+      ? `<span class="badge b-info" title="Анализ видео идёт через Gemini (${esc(API.online.info.backend || '')})"><span class="dot"></span>Анализ: Gemini</span>`
+      : navigator.onLine
       ? `<span class="badge" title="Модели работают локально, облачные сервисы не используются"><span class="dot"></span>Облако не используется</span>`
       : `<span class="badge b-warn" title="Интернета нет, анализ продолжает работать локально"><span class="dot"></span>Нет интернета · работает локально</span>`;
     el.innerHTML = (API.online.value
@@ -146,47 +153,25 @@
 
   const PAGES = {
     dashboard() {
-      const week = SEED.week;
-      const total = week.reduce((s, d) => s + d[1] + d[2], 0) + S.session.length;
-      const viol = week.reduce((s, d) => s + d[1], 0) + S.session.filter((x) => x.verdict === 'violation').length;
-      const max = Math.max(...week.map((d) => d[1] + d[2]));
-      const active = S.agents.filter((a) => a.enabled);
-      const recent = [...S.session.map(sessionRow), ...SEED.history].slice(0, 6);
       return `
-      <div class="card" style="margin-bottom:16px">${demoTag()}
-        <span class="small muted">Цифры на этой странице (проверки за неделю, время анализа, метрики агентов) — демонстрационный макет, а не результаты измерений.</span></div>
-      <div class="grid g-4">
-        ${kpi('scan', total, 'видео проверено за неделю', '+18% к прошлой', 'b-ok')}
-        ${kpi('alert', viol, 'видео с признаками нарушений', `${Math.round((viol / total) * 100)}% от всех`, 'b-warn')}
-        ${kpi('clock', '52 с', 'среднее время анализа', 'лимит жюри 5 мин', 'b-info')}
-        ${kpi('bot', `${active.length}/${S.agents.length}`, 'агентов активно', `${S.agents.filter((a) => a.kind === 'trained').length} обучаемых`, 'b-accent')}
+      <div class="dash-hello">
+        <h2>Здравствуйте${S.user && S.user !== 'demo' ? ', ' + esc(S.user) : ''}!</h2>
+        <p>Загрузите запись кассы — сервис покажет, где похоже на нарушение, с таймкодом, кадром и нормативом. Решение остаётся за вами.</p>
+        <a class="btn btn-primary btn-lg" href="#/check">${icon('upload')} Проверить видео</a>
       </div>
       <div class="grid g-main mt">
-        <div class="card chart-card">
-          <div class="card-h"><h3>Проверки за неделю</h3>${demoTag()}<div class="spacer"></div>
-            <div class="legend"><span style="--c:var(--accent)">с нарушением</span><span style="--c:var(--surface-3)">без нарушений</span></div></div>
-          <div class="bars">${week.map(([d, v, c]) => `
-            <div class="b"><div class="track">
-              <span class="v">${v + c}<em>${v} нар.</em></span>
-              <div class="col" style="height:${((v + c) / max) * 90}%" title="${v} с нарушением, ${c} без">
-                <i style="flex:${v};background:var(--accent)"></i><i style="flex:${c};background:var(--surface-3)"></i></div>
-            </div><span class="d">${d}</span></div>`).join('')}
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-h"><h3>Агенты</h3>${demoTag()}<div class="spacer"></div><a href="#/agents" class="btn btn-soft btn-sm">Все ${icon('arrow')}</a></div>
-          <div class="stack">${S.agents.slice(0, 5).map((a) => `
-            <div class="row" style="flex-wrap:nowrap">
-              <div class="avatar" style="width:36px;height:36px;border-radius:11px">${icon(a.icon)}</div>
-              <div style="min-width:0;flex:1"><div style="font-weight:600;font-size:13.5px">${esc(a.name)}</div>
-                <div class="small muted">${a.alerts} тревог · ${a.m ? `recall ${a.m.r.toFixed(2)}` : 'не обучен'}</div></div>
-              <span class="badge ${a.enabled ? 'b-ok' : ''}"><span class="dot"></span>${a.enabled ? 'вкл' : 'выкл'}</span>
+        <div class="card pad-lg" id="dash-eval"><div class="empty">Загружаю последний замер…</div></div>
+        <div class="card pad-lg">
+          <div class="card-h"><h3>Кто смотрит видео</h3><div class="spacer"></div><a href="#/agents" class="btn btn-soft btn-sm">Все ${icon('arrow')}</a></div>
+          <div class="stack">${S.agents.filter((a) => a.enabled).slice(0, 5).map((a) => `
+            <div class="row" style="flex-wrap:nowrap">${mark(a)}
+              <div style="min-width:0;flex:1"><div style="font-weight:600">${esc(a.name)}</div><div class="small muted">${esc(a.desc.split('.')[0])}</div></div>
             </div>`).join('')}</div>
         </div>
       </div>
       <div class="card mt">
-        <div class="card-h"><h3>Последние проверки</h3>${demoTag()}<div class="spacer"></div><a href="#/history" class="btn btn-ghost btn-sm">История</a></div>
-        ${historyTable(recent)}
+        <div class="card-h"><h3>Последние проверки</h3><div class="spacer"></div><a href="#/history" class="btn btn-ghost btn-sm">Вся история</a></div>
+        <div id="dash-jobs"><div class="empty">Загружаю…</div></div>
       </div>`;
     },
 
@@ -194,23 +179,21 @@
       if (!S.run) {
         const det = S.agents.filter((a) => a.enabled);
         return `
-        <div class="grid g-main">
-          <div class="card pad-lg">
-            <label class="drop" id="drop" for="file">
-              <input id="file" type="file" accept=".mov,.mp4,video/*" hidden>
-              <div class="big">${icon('upload')}</div>
-              <h3>Перетащите видео кассы</h3>
-              <div class="muted">.mov или .mp4, до 500 МБ. Обработка обычно занимает меньше минуты.</div>
-              <span class="btn btn-primary mt">Выбрать файл</span>
-            </label>
-            <div class="row mt small muted">${icon('shield')} Видео обрабатывается локально, в облачные сервисы ничего не отправляется.</div>
-          </div>
-          <div class="card">
-            <div class="card-h"><h3>Кто будет проверять</h3><span class="badge b-accent">${det.length} агентов</span></div>
-            <div class="stack">${det.map((a) => liveAgent(a, { state: 'wait', msg: esc(a.model) })).join('')}</div>
-            <hr class="sep">
-            <div class="small muted">Затем находки проверят служебные агенты: скептик, юрист и агрегатор.</div>
-          </div>
+        <div class="check-empty">
+          <label class="drop" id="drop" for="file">
+            <input id="file" type="file" accept=".mov,.mp4,video/*" hidden>
+            <span class="drop-ic">${icon('upload')}</span>
+            <h3>Перетащите запись кассы сюда</h3>
+            <p>или выберите файл на компьютере · .mov или .mp4 до 500 МБ</p>
+            <span class="btn btn-primary">Выбрать видео</span>
+          </label>
+          <aside class="who">
+            <div class="ava-stack">${det.map((a) => mark(a)).join('')}</div>
+            <h3>Видео посмотрят ${det.length} ${det.length === 1 ? 'агент' : det.length < 5 ? 'агента' : 'агентов'}</h3>
+            <ul>${det.map((a) => `<li><b>${esc(a.name)}</b><span>${esc(ruleById(a.types[0]).title)}</span></li>`).join('')}</ul>
+            <p class="small muted">Потом юрист подберёт норматив из проверенной базы, а агрегатор соберёт итог.
+              ${isCloud() ? 'Видео ужимается на сервере (без звука) и уходит на анализ в Gemini.' : 'Видео не покидает сервер.'}</p>
+          </aside>
         </div>`;
       }
       const r = S.run;
@@ -218,10 +201,10 @@
       <div class="grid g-main">
         <div class="stack">
           <div id="verdict"></div>
-          <div class="card player">
+          <div class="card player ${r.result ? '' : 'scanning'}" id="player">
             <video id="video" src="${r.url}" controls muted playsinline preload="auto"></video>
             <div class="timeline" id="tl"><canvas id="tlc"></canvas><div class="head" id="tlh"></div></div>
-            <div class="row mt small muted"><span>${icon('scan')} ${esc(r.file.name)}</span><span>·</span><span>${(r.file.size / 1048576).toFixed(1)} МБ</span>
+            <div class="row mt small muted"><span>${icon('scan')} ${esc(r.file.name)}</span>${r.file.size ? `<span>·</span><span>${(r.file.size / 1048576).toFixed(1)} МБ</span>` : ''}
               <div style="flex:1"></div><button class="btn btn-ghost btn-sm" data-act="new-check">${icon('plus')} Новая проверка</button></div>
           </div>
           <div id="violations" class="stack"></div>
@@ -246,7 +229,7 @@
       return `
       <div class="row" style="margin-bottom:16px">
         <div class="tabs">${tabs.map(([id, l]) => `<button class="${S.agentTab === id ? 'on' : ''}" data-agent-tab="${id}">${l}</button>`).join('')}</div>
-        <div style="flex:1"></div>${demoTag()}
+        <div style="flex:1"></div>
         <button class="btn btn-primary" data-act="add-agent">${icon('plus')} Новый агент</button>
       </div>
       <div class="grid g-3">
@@ -259,8 +242,8 @@
       <h3 class="mt" style="margin:28px 0 12px;font-size:16px">Служебные агенты конвейера</h3>
       <div class="grid g-3">${SEED.service.map((a) => `
         <div class="card agent">
-          <div class="agent-top"><div class="avatar">${icon(a.icon)}</div>
-            <div style="flex:1"><h4>${a.name}</h4><div class="kind">всегда включён</div></div><span class="badge b-ok"><span class="dot"></span>активен</span></div>
+          <div class="agent-top">${mark(a)}
+            <div style="flex:1"><h4>${a.name}</h4><div class="kind">работает всегда</div></div></div>
           <p>${a.desc}</p>
         </div>`).join('')}
       </div>`;
@@ -294,7 +277,7 @@ cam1_002.mov,no_violation,,</div>
         </div>
       </div>
       <div class="card mt">
-        <div class="card-h"><h3>Запуски обучения</h3>${demoTag()}</div>
+        <div class="card-h"><h3>Запуски обучения</h3></div>
         <div class="table-wrap"><table class="t">
           <thead><tr><th>ID</th><th>Агент</th><th>Датасет</th><th>Видео</th><th>Начато</th><th>Статус</th><th>Precision</th><th>Recall</th></tr></thead>
           <tbody>${S.trainings.map((t) => `<tr>
@@ -334,36 +317,25 @@ cam1_002.mov,no_violation,,</div>
       </div>`;
     },
 
+    eval() {
+      return '<div class="card pad-lg" id="eval-box"><div class="empty">Загружаю результаты замера…</div></div>';
+    },
+
     history() {
-      let rows = [...S.session.map(sessionRow), ...SEED.history];
-      if (S.histFilter !== 'all') rows = rows.filter((h) => h.verdict === S.histFilter);
       const tabs = [['all', 'Все'], ['violation', 'С нарушениями'], ['no_violation', 'Без нарушений']];
       return `
       <div class="row" style="margin-bottom:16px">
         <div class="tabs">${tabs.map(([id, l]) => `<button class="${S.histFilter === id ? 'on' : ''}" data-hist="${id}">${l}</button>`).join('')}</div>
-        <div style="flex:1"></div>${demoTag()}
+        <div style="flex:1"></div>
         <a class="btn btn-primary" href="#/check">${icon('upload')} Проверить видео</a>
       </div>
-      <div class="card">${historyTable(rows)}</div>`;
+      <div class="card" id="hist-box"><div class="empty">Загружаю…</div></div>`;
     },
 
     settings() {
       const origin = location.protocol === 'file:' ? 'https://<ваш-домен>' : location.origin;
       return `
-      <div class="card pad-lg">
-        <div class="card-h"><h3>${icon('palette')} Стиль интерфейса</h3><div class="spacer"></div>
-          <div class="tabs"><button class="${S.mode === 'light' ? 'on' : ''}" data-set-mode="light">${icon('sun')} Светлая</button><button class="${S.mode === 'dark' ? 'on' : ''}" data-set-mode="dark">${icon('moon')} Тёмная</button></div></div>
-        <div class="styles">${STYLES.map((s) => `
-          <button class="style-card ${S.style === s.id ? 'on' : ''}" data-style="${s.id}">
-            <div class="style-prev" style="background:${s.c[2]}">
-              <div class="s" style="background:${s.c[0]}"><i style="background:${s.c[1]};width:70%"></i><i style="background:${s.c[3]};opacity:.5"></i><i style="background:${s.c[3]};opacity:.5;width:80%"></i></div>
-              <div class="m"><i style="background:${s.c[1]};width:45%;height:10px"></i><i style="background:${s.c[3]};border:1px solid rgba(0,0,0,.06);height:26px"></i><i style="background:${s.c[3]};border:1px solid rgba(0,0,0,.06);height:18px;width:70%"></i></div>
-            </div>
-            <div class="meta"><b>${s.name}</b><span class="small muted">${s.note}</span></div>
-          </button>`).join('')}
-        </div>
-      </div>
-      <div class="grid g-2 mt">
+      <div class="grid g-2">
         <div class="card">
           <div class="card-h"><h3>${icon('key')} API для жюри</h3></div>
           <dl class="kv">
@@ -377,7 +349,7 @@ cam1_002.mov,no_violation,,</div>
 curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"</div>
         </div>
         <div class="card">
-          <div class="card-h"><h3>${icon('filter')} Чувствительность</h3>${demoTag()}</div>
+          <div class="card-h"><h3>${icon('filter')} Чувствительность</h3></div>
           <div class="field"><label>Порог тревоги: <span id="thr-v">0.50</span></label>
             <input type="range" min="0.2" max="0.9" step="0.01" value="0.5" id="thr" style="accent-color:var(--accent)"></div>
           <p class="small muted">Ниже порог даёт меньше пропусков и больше ложных тревог. Банку важнее не пропустить нарушение, поэтому порог подбирается так, чтобы recall на валидации был 1.0.</p>
@@ -388,7 +360,73 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     },
   };
 
+  const fmtT = (t) => `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, '0')}`;
+  function evalHtml(r) {
+    const pos = r.tp + r.fn, neg = r.fp + r.tn;
+    const rows = r.rows.map((x) => ({ ...x, st: x.truth && x.pred ? 'ok' : x.truth ? 'miss' : x.pred ? 'false' : 'clean' }));
+    const shown = rows.filter((x) => S.evalFilter === 'all' || (S.evalFilter === 'bad' ? x.st === 'miss' || x.st === 'false' : x.st === S.evalFilter));
+    const lbl = { ok: ['нарушение найдено', 'b-ok'], clean: ['норма, всё верно', 'b-ok'], miss: ['нарушение пропущено', 'b-danger'], false: ['ложная тревога', 'b-warn'] };
+    const typeName = (id) => ruleById(id).title;
+    const tabs = [['all', 'Все ' + rows.length], ['bad', 'Ошибки ' + rows.filter((x) => x.st === 'miss' || x.st === 'false').length], ['ok', 'Найдены'], ['false', 'Ложные тревоги'], ['miss', 'Пропуски']];
+    return `
+      <p class="eval-lead">Модель <b>${esc(r.model)}</b> посмотрела <b>${r.n}</b> разных роликов организаторов. Ниже — что она сказала про каждый и что на самом деле стоит в разметке. Замер от ${esc(r.made)}.</p>
+      <div class="eval-sum">
+        <div><b>${r.tp} из ${pos}</b><span>нарушений нашли</span></div>
+        <div><b>${r.fp} из ${neg}</b><span>нормальных роликов ошибочно отметили</span></div>
+        <div><b>${r.loc} из ${r.tp}</b><span>таймкод попал в ±${r.tol} с</span></div>
+        <div><b>${r.avg_sec} с</b><span>в среднем на ролик, максимум ${r.max_sec} с</span></div>
+      </div>
+      <p class="small muted eval-note">Подсказки в промпте подбирались по этим же роликам, поэтому на новых видео жюри результат, скорее всего, будет немного хуже.</p>
+      <div class="tabs" style="margin:18px 0">${tabs.map(([id, l]) => `<button class="${S.evalFilter === id ? 'on' : ''}" data-eval-f="${id}">${l}</button>`).join('')}</div>
+      <div class="eval-list">${shown.map((x) => `
+        <article class="eval-row ${x.st}">
+          ${x.still ? `<img src="data:image/jpeg;base64,${x.still}" alt="" loading="lazy"><i class="t">${fmtT(x.still_t)}</i>` : '<div class="noimg"></div>'}
+          <div class="eval-body">
+            <div class="row" style="gap:10px"><b>${esc(x.id)}</b><span class="small muted">${fmtT(x.duration)} · ${x.sec} с на анализ</span><span class="badge ${lbl[x.st][1]}">${lbl[x.st][0]}</span></div>
+            <p><span class="muted">В разметке:</span> ${x.truth ? 'нарушение на ' + x.truth_tcs.map((t) => fmtT(t)).join(' и ') : 'нарушений нет'}</p>
+            <p><span class="muted">Система:</span> ${x.found.length ? x.found.map((f) => `${esc(typeName(f.type_id))} на ${fmtT(f.timecode_sec)}`).join('; ') : 'нарушений не видит'}${x.delta != null ? ` <span class="muted">(разница ${x.delta} с)</span>` : ''}</p>
+          </div>
+        </article>`).join('') || '<div class="empty">Нет таких роликов</div>'}</div>`;
+  }
+
+  const whenStr = (ts) => {
+    const d = new Date(ts * 1000), now = new Date();
+    const hm = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return `сегодня, ${hm}`;
+    return `${d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}, ${hm}`;
+  };
+  const jobRow = (j) => ({ id: j.job_id, file: j.file, when: whenStr(j.created), dur: Math.round(j.duration_sec || 0),
+    verdict: j.status === 'done' ? j.verdict : j.status, n: j.types.length, sec: j.processing_sec ?? '—', types: j.types, live: true });
+  async function loadJobs() {
+    if (!API.online.value) return S.session.map(sessionRow);
+    try { return (await API.jobsList()).map(jobRow); } catch { return S.session.map(sessionRow); }
+  }
+  function evalCard(r) {
+    return `<div class="card-h"><h3>Как сервис работает на роликах организаторов</h3></div>
+      <div class="eval-sum">
+        <div><b>${r.tp} из ${r.tp + r.fn}</b><span>нарушений находит</span></div>
+        <div><b>${r.fp} из ${r.fp + r.tn}</b><span>нормальных роликов ошибочно отмечает</span></div>
+        <div><b>${r.avg_sec} с</b><span>в среднем на ролик</span></div>
+      </div>
+      <p class="small muted eval-note">Замер от ${esc(r.made)}, ${r.n} видео, модель ${esc(r.model)}. <a href="#/eval">Посмотреть ролик за роликом →</a></p>`;
+  }
+
   const AFTER = {
+    dashboard() {
+      API.evalReport().then((r) => { const b = $('#dash-eval'); if (b) b.innerHTML = evalCard(r); })
+        .catch(() => { const b = $('#dash-eval'); if (b) b.innerHTML = '<div class="empty">Замер ещё не запускали: <span class="mono">python ml/eval_gemini.py</span></div>'; });
+      loadJobs().then((rows) => { const b = $('#dash-jobs'); if (b) b.innerHTML = historyTable(rows.slice(0, 6)); });
+    },
+    history() {
+      loadJobs().then((rows) => {
+        if (S.histFilter !== 'all') rows = rows.filter((h) => h.verdict === S.histFilter);
+        const b = $('#hist-box'); if (b) b.innerHTML = historyTable(rows);
+      });
+    },
+    eval() {
+      API.evalReport().then((r) => { const b = $('#eval-box'); if (b) { b.dataset.ready = '1'; b.innerHTML = evalHtml(r); S.evalData = r; } })
+        .catch((e) => { const b = $('#eval-box'); if (b) b.innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+    },
     check() {
       if (!S.run) return bindDrop($('#drop'), $('#file'), (f) => startCheck(f));
       renderLive(); renderResults(); bindTimeline();
@@ -427,36 +465,36 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
         <td class="muted">${h.sec} с</td></tr>`).join('')}</tbody></table></div>`;
   }
 
+  // Аватарки агентов: design/img/agents/<id>.svg (Notionists by Zoish, CC0), для новых агентов — default
+  const AVATARS = ['anomaly', 'stranger', 'unattended', 'handover', 'safe', 'pocket', 'vlm', 'items', 'lawyer', 'aggregator', 'motion'];
+  const avaSrc = (a) => `img/agents/${AVATARS.includes(a.id) ? a.id : 'default'}.svg`;
+  const mark = (a, st = '') => `<span class="ava ${st}"><img src="${avaSrc(a)}" alt="" width="44" height="44" loading="lazy"></span>`;
+
   function agentCard(a) {
     const [kl, kc] = KIND[a.kind] || ['Агент', ''];
     return `
     <div class="card agent ${a.enabled ? '' : 'off'}">
       <div class="agent-top">
-        <div class="avatar">${icon(a.icon)}</div>
-        <div style="flex:1;min-width:0"><h4>${esc(a.name)}</h4><div class="kind">${esc(a.model)}</div></div>
+        ${mark(a)}
+        <div style="flex:1;min-width:0"><h4>${esc(a.name)}</h4><div class="kind">${esc(ruleById(a.types[0]).title)}</div></div>
         <label class="switch" title="${a.enabled ? 'Выключить' : 'Включить'}"><input type="checkbox" data-toggle="${a.id}" ${a.enabled ? 'checked' : ''}><span></span></label>
       </div>
       <p>${esc(a.desc)}</p>
-      ${a.m ? `<div class="metrics">
-        <div class="metric"><b>${a.m.p.toFixed(2)}</b><span>precision</span></div>
-        <div class="metric"><b>${a.m.r.toFixed(2)}</b><span>recall</span></div>
-        <div class="metric"><b>${a.m.ms} мс</b><span>на кадр</span></div></div>`
-        : `<div class="metric" style="text-align:center"><span>Агент ещё не обучен: загрузите датасет</span></div>`}
+      ${a.version === 'draft' ? '<p class="small muted">Черновик: включится после обучения на видео с разметкой.</p>' : ''}
       <div class="agent-foot">
-        <span class="badge ${kc}">${kl}</span><span class="badge mono">${esc(a.version)}</span>
+        <span class="small muted">${esc(ruleById(a.types[0]).clause ? 'норматив: ' + ruleById(a.types[0]).clause : 'без привязки к пункту')}</span>
         <div class="spacer"></div>
-        <button class="btn btn-soft btn-sm" data-train="${a.id}">${icon('brain')} Обучить</button>
+        <button class="btn btn-soft btn-sm" data-train="${a.id}">Обучить</button>
       </div>
     </div>`;
   }
 
   function liveAgent(a, st) {
     return `<div class="live-agent ${st.state}" data-live="${a.id}">
-      <div class="avatar">${icon(st.state === 'alert' ? 'alert' : st.state === 'clear' ? 'check' : a.icon)}</div>
-      <div style="min-width:0"><div class="name">${esc(a.name)}</div><div class="msg">${st.msg}</div>
-        ${st.state === 'scan' ? `<div class="progress"><i style="width:${Math.round(st.p * 100)}%"></i></div>` : ''}</div>
+      ${mark(a, st.state)}
+      <div style="min-width:0"><div class="name">${esc(a.name)}</div><div class="msg">${st.msg}</div></div>
       <span class="badge ${st.state === 'alert' ? 'b-danger' : st.state === 'clear' ? 'b-ok' : st.state === 'scan' ? 'b-accent pulse' : ''}">
-        ${st.state === 'scan' ? '<span class="dot"></span>анализ' : st.state === 'alert' ? 'тревога' : st.state === 'clear' ? 'чисто' : 'ожидает'}</span>
+        ${st.state === 'scan' ? '<span class="dot"></span>смотрит' : st.state === 'alert' ? 'нашёл' : st.state === 'clear' ? 'чисто' : 'ждёт'}</span>
     </div>`;
   }
 
@@ -480,16 +518,13 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     const video = $('#video');
     await new Promise((r) => (video.readyState >= 1 ? r() : video.addEventListener('loadedmetadata', r, { once: true })));
     const dur = video.duration || 30;
-    feed('Perception', `кадры 4 fps · ${Math.round(dur * 4)} кадров, общая сцена построена`, 'layers');
+    feed('Сервис', `видео ${fmt(dur)} принято, идёт анализ`, 'layers');
 
     let result = null;
     const t0 = Date.now();
     const tick = setInterval(() => {
       const k = Math.min(0.95, (Date.now() - t0) / 1000 / Math.max(4, dur * 0.5));
-      detectors.forEach((a, i) => {
-        const p = Math.min(0.97, k * (1.1 - i * 0.04));
-        S.run.st[a.id] = { state: 'scan', p, msg: `кадр ${Math.round(p * dur * 4)} из ${Math.round(dur * 4)}` };
-      });
+      detectors.forEach((a) => { S.run.st[a.id] = { state: 'scan', p: k, msg: 'смотрит видео' }; });
       S.run.overall = k * 0.8;
       renderLive();
     }, 300);
@@ -522,6 +557,18 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     await reveal(result, detectors);
   }
 
+  // старый отчёт из истории: без «живого» конвейера, сразу результат и видео с сервера
+  async function openStored(res) {
+    const meta = (await API.jobsList().catch(() => [])).find((j) => j.job_id === res.job_id);
+    const detectors = S.agents.filter((a) => a.enabled);
+    for (const v of res.violations) v.agent = v.agent || (detectors.find((a) => a.types.includes(v.type_id)) || {}).id;
+    res.file = meta?.file || `${res.job_id}.mov`;
+    S.run = { file: { name: res.file, size: 0 }, url: `/ui/jobs/${res.job_id}/video`, result: res, phase: `Готово за ${res.processing_sec} с`,
+      overall: 1, feed: [], pipeline: [], st: {} };
+    location.hash = '#/check';
+    if (page() === 'check') route();
+  }
+
   async function reveal(result, detectors) {
     const run = S.run;
     // сопоставляем находки с агентами (по типу нарушения)
@@ -543,7 +590,6 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     }
     const n = result.violations.length;
     for (const [id, msg] of [
-      ['skeptic', n ? `проверил ${n} ${n === 1 ? 'находку' : 'находки'}: безобидного объяснения не найдено` : 'нечего опровергать'],
       ['lawyer', n ? 'нормативы подобраны из проверенной базы' : 'ссылки не требуются'],
       ['aggregator', n ? `вердикт: признаки нарушений (${n})` : 'вердикт: нарушение не обнаружено'],
     ]) {
@@ -571,7 +617,10 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
   function renderLive() {
     const r = S.run;
     if (!r || !$('#live')) return;
+    $('#player')?.classList.toggle('scanning', !r.result);
+    const first = !$('#live').children.length;
     $('#live').innerHTML = r.pipeline.map((a) => liveAgent(a, r.st[a.id])).join('');
+    if (first) $$('#live .live-agent').forEach((el, i) => { el.classList.add('enter'); el.style.animationDelay = `${i * 70}ms`; });
     $('#overall').style.width = `${Math.round(r.overall * 100)}%`;
     $('#phase').innerHTML = `<span class="badge ${r.result ? 'b-ok' : 'b-accent pulse'}">${r.result ? '' : '<span class="dot"></span>'}${esc(r.phase)}</span>`;
     const fe = $('#feed');
@@ -632,22 +681,22 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     const tl = $('#tl'), v = $('#video');
     if (!tl || !v) return;
     tl.onclick = (e) => { v.currentTime = (e.offsetX / tl.clientWidth) * (v.duration || 0); };
-    v.ontimeupdate = () => { $('#tlh').style.left = `${(v.currentTime / (v.duration || 1)) * 100}%`; };
+    v.ontimeupdate = () => { const h = $('#tlh'); if (h) h.style.left =`${(v.currentTime / (v.duration || 1)) * 100}%`; };
   }
 
   // ---------- обучение ----------
   function trainFormHtml(opts) {
     return `
-      <div class="card-h"><h3>${icon('brain')} Новое обучение</h3></div>
+      <div class="card-h"><h3>Новое обучение</h3></div>
       <div class="field"><label>Агент</label><select class="select" id="t-agent">${opts}</select></div>
       <label class="drop mt" id="zdrop" for="zfile" style="padding:30px 16px">
         <input id="zfile" type="file" accept=".zip,application/zip" hidden>
-        <div class="big">${icon('zip')}</div>
-        <h3 id="z-name">Загрузите ZIP с датасетом</h3>
-        <div class="muted small" id="z-hint">videos/*.mov и labels.csv</div>
+        <span class="drop-ic">${icon('zip')}</span>
+        <h3 id="z-name">Перетащите ZIP с датасетом</h3>
+        <p id="z-hint">внутри videos/*.mov и labels.csv</p>
       </label>
       <div id="z-tree" class="zip-tree mt hide"></div>
-      <div class="row mt"><div style="flex:1"></div><button class="btn btn-primary" id="t-go" disabled data-act="start-train">${icon('play')} Начать обучение</button></div>`;
+      <div class="row mt"><div style="flex:1"></div><button class="btn btn-primary" id="t-go" disabled data-act="start-train">Начать обучение</button></div>`;
   }
 
   let pickedZip = null;
@@ -745,8 +794,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     const icons = ['bot', 'users', 'wallet', 'bag', 'safe', 'hand', 'door', 'phone', 'eye', 'cpu'];
     const body = [
       `<div class="field"><label>Название</label><input class="input" id="w-name" placeholder="Например, «Телефон в кассовой зоне»" value="${esc(draft.name)}"></div>
-       <div class="field mt"><label>Что видно на видео</label><textarea class="input" id="w-desc" placeholder="Кассир держит телефон над столом с наличными">${esc(draft.desc)}</textarea></div>
-       <div class="field mt"><label>Иконка</label><div class="row">${icons.map((i) => `<button class="btn btn-icon ${draft.icon === i ? 'btn-primary' : 'btn-ghost'}" data-w-icon="${i}">${icon(i)}</button>`).join('')}</div></div>`,
+       <div class="field mt"><label>Что видно на видео</label><textarea class="input" id="w-desc" placeholder="Кассир держит телефон над столом с наличными">${esc(draft.desc)}</textarea></div>`,
       `<div class="field"><label>Как агент принимает решение</label>
        <div class="choice">${[['trained', 'Обучаемая модель', 'учится на ваших видео из ZIP'], ['rule', 'Правила', 'логика поверх детекций: люди, зоны, предметы'], ['vlm', 'Локальная VLM', 'смотрит спорные кадры, медленно на CPU']]
         .map(([v, b, d]) => `<label><input type="radio" name="w-kind" value="${v}" ${draft.kind === v ? 'checked' : ''}><b>${b}</b>${d}</label>`).join('')}</div></div>
@@ -800,7 +848,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
 
   // ---------- события ----------
   document.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-fill],[data-scroll],[data-act],.style-card,[data-set-mode],[data-agent-tab],[data-hist],[data-train],[data-seek],[data-open],[data-w-icon],[data-zoom]');
+    const t = e.target.closest('[data-fill],[data-scroll],[data-act],.style-card,[data-set-mode],[data-agent-tab],[data-hist],[data-eval-f],[data-train],[data-seek],[data-open],[data-w-icon],[data-zoom]');
     if (!t) return;
     const d = t.dataset;
     if (d.fill !== undefined) { const i = document.getElementById(d.target); if (i) i.value = d.fill; return; }
@@ -811,6 +859,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     if (d.setMode) { S.mode = d.setMode; applyTheme(); shell(); route(); return; }
     if (d.agentTab) { S.agentTab = d.agentTab; route(); return; }
     if (d.hist) { S.histFilter = d.hist; route(); return; }
+    if (d.evalF) { S.evalFilter = d.evalF; const b = $('#eval-box'); if (b && S.evalData) b.innerHTML = evalHtml(S.evalData); return; }
     if (d.train) {
       if (S.train?.done) S.train = null;
       S.trainAgent = d.train;
@@ -818,8 +867,9 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
       return;
     }
     if (d.open) {
-      if (S.run?.result?.job_id === d.open) location.hash = '#/check';
-      else toast('Отчёт доступен до перезагрузки страницы только для последней проверки', 'eye');
+      if (S.run?.result?.job_id === d.open) { location.hash = '#/check'; return; }
+      if (!API.online.value) { toast('Отчёт доступен только для последней проверки', 'eye'); return; }
+      API.job(d.open).then((res) => openStored(res)).catch((er) => toast(er.message, 'alert'));
       return;
     }
     if (d.wIcon) { const m = $('#modal'); readDraft(); m.draft.icon = d.wIcon; addAgentModal(m.stepN, m.draft); return; }
@@ -875,7 +925,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
 
       <section class="hero">
         <div class="hero-text">
-          <span class="pill"><i class="live-dot"></i>Локальный AI · видео не покидает сервер</span>
+          <span class="pill"><i class="live-dot"></i>${isCloud() ? 'Анализ видео через Gemini · нормативы из проверенной базы' : 'Локальный AI · видео не покидает сервер'}</span>
           <h1>Проверка видео кассы за минуты, а&nbsp;не&nbsp;часы просмотра</h1>
           <p>Агенты находят визуальные признаки нарушений кассовой дисциплины и показывают таймкод, кадры-доказательства и ссылку на норматив. Решение остаётся за проверяющим.</p>
           <div class="row"><a class="btn btn-primary btn-lg" href="#/login">Войти в систему ${icon('arrow')}</a>
@@ -883,7 +933,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
           <ul class="hero-facts">
             <li><b>≤ 5 мин</b><span>на одно видео</span></li>
             <li><b>1–3 кадра</b><span>доказательства на каждое событие</span></li>
-            <li><b>0</b><span>обращений к облачным AI</span></li>
+            ${isCloud() ? '<li><b>~30 с</b><span>в среднем на ролик</span></li>' : '<li><b>0</b><span>обращений к облачным AI</span></li>'}
           </ul>
         </div>
         <div class="hero-vis" aria-hidden="true">
@@ -893,7 +943,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
               <span class="tl-l muted">Видео</span>
               <div class="strip">${[0, 1, 2, 3, 4, 5, 6, 7].map((i) => `<i class="${i === 5 ? 'hit' : ''}"></i>`).join('')}</div>
               ${[['Общая аномалия', 69, 9, 'soft', ''], ['Посторонний у кассы', 70, 8, 'hit', ''], ['Деньги без присмотра', 0, 0, '', 'чисто'],
-                 ['Инкассация', 0, 0, '', 'чисто'], ['Скептик', 73, 1.4, 'ink', 'подтвердил']]
+                 ['Инкассация', 0, 0, '', 'чисто'], ['Юрист', 73, 1.4, 'ink', 'норматив подобран']]
                 .map(([n, l, w, c, note]) => `<span class="tl-l">${n}</span><div class="lane">${w ? `<i class="seg ${c}" style="left:${l}%;width:${w}%"></i>` : ''}${note ? `<em class="${c === 'ink' ? 'ink' : 'ok'}">${note}</em>` : ''}</div>`).join('')}
               <span></span>
               <div class="axis"><span>00:00</span><span>00:15</span><span>00:30</span><b>00:44.2</b><span>01:00</span></div>
@@ -910,7 +960,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
         <div class="steps4">
           ${[['upload', 'Загрузка', 'Видео .mov через веб или API. Обработка начинается сразу.'],
              ['layers', 'Разбор сцены', 'Кадры, люди и предметы считаются один раз и общие для всех агентов.'],
-             ['bot', 'Агенты', 'Каждый ищет свой тип риска. Скептик проверяет находки, юрист подбирает норматив.'],
+             ['bot', 'Агенты', 'Каждый отвечает за свой тип риска. Юрист подбирает норматив только из проверенной базы.'],
              ['check', 'Отчёт', 'Вердикт, таймкод, кадры, описание и пункт норматива. JSON для систем банка.']]
             .map(([ic, t, d], i) => `<div class="step4"><span class="n">0${i + 1}</span><div class="ic">${icon(ic)}</div><b>${t}</b><p>${d}</p></div>`).join('')}
         </div>
@@ -928,7 +978,9 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
           <p class="eyebrow">Безопасность</p>
           <h2>Можно перенести во внутренний контур банка</h2>
           <div class="trust3">
-            <div>${icon('cpu')}<b>Всё локально</b><p>Модели работают на сервере. После загрузки весов интернет не нужен, видео и кадры никуда не отправляются.</p></div>
+            ${isCloud()
+              ? `<div>${icon('cpu')}<b>Режим работы на выбор</b><p>Сейчас анализ идёт через Gemini: на сервере видео ужимается и уходит без звука. Есть и локальный режим, где видео не покидает сервер.</p></div>`
+              : `<div>${icon('cpu')}<b>Всё локально</b><p>Модели работают на сервере. После загрузки весов интернет не нужен, видео и кадры никуда не отправляются.</p></div>`}
             <div>${icon('eye')}<b>Без лиц и звука</b><p>Сервис не распознаёт и не идентифицирует людей и не использует звук. Только видимые действия.</p></div>
             <div>${icon('scale')}<b>Без выдуманных ссылок</b><p>Нормативы берутся только из проверенной базы актов РК. Не видно на видео — значит, не утверждаем.</p></div>
           </div>
@@ -972,21 +1024,18 @@ curl .../api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"
 
   async function loginScreen(err = '') {
     document.title = 'Вход · Cashier AI';
+    document.body.classList.add('is-auth');
     const online = API.online.value;
     $('#app').innerHTML = `
     <div class="auth">
       <aside class="auth-art" id="auth-art" aria-hidden="true">
         ${artHtml()}
-        <div class="art-caption">
-          <a href="#/" class="pub-brand on-dark"><img src="img/logo.svg" alt="" width="40" height="41"><span>Cashier AI</span></a>
-          <p>Агенты просматривают записи кассы и находят признаки нарушений: с таймкодом, кадрами и нормативом.</p>
-        </div>
       </aside>
       <main class="auth-main">
         <a href="#/" class="auth-close">${icon('arrow', 'flip')}<span>На главную</span></a>
         <div class="auth-box">
           <div class="auth-head">
-            <div class="auth-logo">${icon('eye')}</div>
+            <img class="auth-logo" src="img/logo.svg" alt="" width="72" height="73">
             <h1>Cashier AI</h1>
             <p>Контроль кассовой дисциплины</p>
           </div>
@@ -1001,7 +1050,6 @@ curl .../api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"
             <button class="btn btn-primary btn-lg" type="submit">Войти в систему</button>
             <div id="demo-box"></div>
           </form>
-          <p class="auth-note">${icon('shield')}<span>Посторонним вход запрещён. Неудачные попытки записываются, после пяти подряд вход блокируется на 5 минут.</span></p>
         </div>
       </main>
     </div>`;
@@ -1041,9 +1089,11 @@ curl .../api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"
   function render() {
     if (!S.user) {
       $('#side')?.remove();
+      if (page() !== 'login') document.body.classList.remove('is-auth');
       return page() === 'login' ? void loginScreen() : landing();
     }
     if (page() === 'login' || !PAGES[page()]) { history.replaceState(null, '', '#/dashboard'); }
+    document.body.classList.remove('is-auth');
     if (!$('#page')) { document.title = 'Cashier AI'; shell(); renderConn(); }
     route();
   }

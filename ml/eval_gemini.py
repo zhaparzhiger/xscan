@@ -8,6 +8,7 @@
 Ответы кэшируются в data/gemini/<model>/<id>.json (повторный запуск не тратит запросы; --fresh — заново).
 """
 import argparse
+import base64
 import json
 import sys
 import time
@@ -37,6 +38,20 @@ def run_one(v, model, cache: Path, fresh: bool):
     return v, ans
 
 
+def _still(path: Path, t: float) -> str:
+    """Кадр ролика в момент t как base64 jpeg — для страницы «Замер» в интерфейсе."""
+    import cv2
+    cap = cv2.VideoCapture(str(path))
+    cap.set(cv2.CAP_PROP_POS_MSEC, max(t, 0) * 1000)
+    ok, f = cap.read()
+    cap.release()
+    if not ok:
+        return ""
+    h = 220
+    f = cv2.resize(f, (int(f.shape[1] * h / f.shape[0]), h))
+    return base64.b64encode(cv2.imencode(".jpg", f, [cv2.IMWRITE_JPEG_QUALITY, 70])[1]).decode()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=gemini.MODEL)
@@ -59,6 +74,7 @@ def main():
 
     tp = fn = fp = tn = err = loc = 0
     secs = []
+    rows = []
     for v, ans in sorted(results, key=lambda r: int(r[0]["id"].split("-")[1])):
         if "_error" in ans:
             err += 1
@@ -79,12 +95,26 @@ def main():
             fp += 1
         else:
             tn += 1
+        found_rows = [{"type_id": f["type_id"], "timecode_sec": round(f["timecode_sec"], 1),
+                       "confidence": round(f["confidence"], 2)} for f in found]
+        t_show = found[0]["timecode_sec"] if found else (v["tcs"][0] if v["tcs"] else ans["_duration"] / 2)
+        rows.append({"id": v["id"], "truth": truth, "truth_tcs": v["tcs"], "pred": pred, "found": found_rows,
+                     "sec": ans.get("_sec", 0), "duration": round(ans["_duration"], 1),
+                     "delta": (None if not (truth and pred) else round(d, 1)),
+                     "still": _still(VIDEOS / v["file"], t_show), "still_t": round(t_show, 1)})
         mark = "OK " if pred == truth else "ERR"
         got = ", ".join(f"{f['type_id']}@{f['timecode_sec']:.0f}({f['confidence']:.2f})" for f in found) or "—"
         print(f"{v['id']:6} {mark} истина={'нар@' + ','.join(f'{t:.0f}' for t in v['tcs']) if truth else 'норма':12} "
               f"ответ={got} {hit} [{ans.get('_sec', 0)}с]")
 
     n = tp + fn + fp + tn
+    report = {"model": a.model, "tag": a.tag, "tol": a.tol, "n": n,
+              "tp": tp, "fn": fn, "fp": fp, "tn": tn, "loc": loc,
+              "avg_sec": round(sum(secs) / max(len(secs), 1), 1), "max_sec": round(max(secs, default=0), 1),
+              "made": time.strftime("%d.%m.%Y %H:%M"), "rows": rows}
+    out = config.DATA_DIR / "eval_report.json"
+    out.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+    print(f"отчёт для интерфейса: {out}")
     print(f"\nмодель {a.model}: видео {n} (+{err} ошибок), {time.time() - t0:.0f} с всего")
     print(f"recall {tp}/{tp + fn} = {tp / max(tp + fn, 1):.2f}   ложные тревоги {fp}/{fp + tn} = {fp / max(fp + tn, 1):.2f}   "
           f"точность вердикта {(tp + tn) / max(n, 1):.2f}")
