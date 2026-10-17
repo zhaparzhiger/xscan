@@ -2,25 +2,26 @@
 // Реальные данные придут из API (см. api.js), когда бэкенд получит эндпоинты агентов и обучения.
 
 window.SEED = {
-  // Типы нарушений и нормативы — зеркало app/rules/violations.yaml (пункты ещё не проверены).
+  // Типы нарушений и нормативы — зеркало app/rules/violations.yaml (пункты прочитаны на adilet.zan.kz, см. docs/norms.md).
   rules: [
-    { id: 'unauthorized_person', title: 'Посторонний в кассовом помещении', doc: 'security_rules', clause: null },
-    { id: 'cashier_left_workplace', title: 'Кассир оставил ценности без присмотра', doc: 'cash_rules', clause: null },
-    { id: 'safe_left_open', title: 'Сейф оставлен открытым', doc: 'security_rules', clause: null },
-    { id: 'improper_handover', title: 'Нарушение порядка передачи ценностей (инкассация)', doc: 'cash_rules', clause: null },
-    { id: 'door_open', title: 'Дверь кассы открыта при работе с ценностями', doc: 'security_rules', clause: null },
+    { id: 'unauthorized_person', title: 'Посторонний в кассовом помещении', doc: 'security_rules', clause: 'пп. 8, 16 (косвенно); № 231 п. 75' },
+    { id: 'cashier_left_workplace', title: 'Кассир оставил ценности без присмотра', doc: 'cash_rules', clause: 'пп. 22, 20' },
+    { id: 'safe_left_open', title: 'Сейф оставлен открытым', doc: 'cash_rules', clause: 'пп. 20, 80' },
+    { id: 'personal_items', title: 'Личные вещи / еда на рабочем месте', doc: 'cash_rules', clause: 'п. 12' },
+    { id: 'improper_handover', title: 'Нарушение порядка передачи ценностей (инкассация)', doc: 'security_rules', clause: 'п. 21' },
+    { id: 'door_open', title: 'Дверь кассы открыта при работе с ценностями', doc: 'security_rules', clause: 'пп. 8, 16 (косвенно)' },
     { id: 'generic', title: 'Признаки возможного нарушения кассовой дисциплины', doc: 'cash_rules', clause: null },
   ],
   documents: {
     security_rules: {
       title: 'Правила организации охраны и устройства помещений банков второго уровня',
       req: 'пост. Правления НБРК № 14 от 24.02.2020 (изм. № 88 от 24.12.2024)',
-      url: null, verified: false,
+      url: 'https://adilet.zan.kz/rus/docs/V2000020075', verified: true,
     },
     cash_rules: {
-      title: 'Правила ведения кассовых операций в БВУ',
-      req: 'действующая редакция — уточняется на adilet.zan.kz',
-      url: null, verified: false,
+      title: 'Правила осуществления кассовых операций и операций по инкассации банкнот, монет и ценностей в БВУ',
+      req: 'пост. Правления НБРК № 231 от 29.11.2019 (ред. с изм. № 78 от 30.06.2026)',
+      url: 'https://adilet.zan.kz/rus/docs/V1900019680', verified: true,
     },
   },
 

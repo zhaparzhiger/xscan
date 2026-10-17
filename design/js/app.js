@@ -141,7 +141,8 @@
   }
 
   // ---------- страницы ----------
-  const demoTag = () => (API.online.value ? '' : '<span class="badge demo-flag">демо-данные</span>');
+  // Метрики, история и агенты из SEED (data.js) — макет, не измерения: помечаем всегда, в том числе при живом бэкенде
+  const demoTag = () => '<span class="badge demo-flag" title="Макет интерфейса: цифры не измерены">демо-данные</span>';
 
   const PAGES = {
     dashboard() {
@@ -152,6 +153,8 @@
       const active = S.agents.filter((a) => a.enabled);
       const recent = [...S.session.map(sessionRow), ...SEED.history].slice(0, 6);
       return `
+      <div class="card" style="margin-bottom:16px">${demoTag()}
+        <span class="small muted">Цифры на этой странице (проверки за неделю, время анализа, метрики агентов) — демонстрационный макет, а не результаты измерений.</span></div>
       <div class="grid g-4">
         ${kpi('scan', total, 'видео проверено за неделю', '+18% к прошлой', 'b-ok')}
         ${kpi('alert', viol, 'видео с признаками нарушений', `${Math.round((viol / total) * 100)}% от всех`, 'b-warn')}
@@ -171,7 +174,7 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-h"><h3>Агенты</h3><div class="spacer"></div><a href="#/agents" class="btn btn-soft btn-sm">Все ${icon('arrow')}</a></div>
+          <div class="card-h"><h3>Агенты</h3>${demoTag()}<div class="spacer"></div><a href="#/agents" class="btn btn-soft btn-sm">Все ${icon('arrow')}</a></div>
           <div class="stack">${S.agents.slice(0, 5).map((a) => `
             <div class="row" style="flex-wrap:nowrap">
               <div class="avatar" style="width:36px;height:36px;border-radius:11px">${icon(a.icon)}</div>
@@ -182,7 +185,7 @@
         </div>
       </div>
       <div class="card mt">
-        <div class="card-h"><h3>Последние проверки</h3><div class="spacer"></div><a href="#/history" class="btn btn-ghost btn-sm">История</a></div>
+        <div class="card-h"><h3>Последние проверки</h3>${demoTag()}<div class="spacer"></div><a href="#/history" class="btn btn-ghost btn-sm">История</a></div>
         ${historyTable(recent)}
       </div>`;
     },
@@ -306,8 +309,8 @@ cam1_002.mov,no_violation,,</div>
       return `
       <div class="card" style="margin-bottom:16px;background:var(--warn-soft);border-color:transparent">
         <div class="row" style="flex-wrap:nowrap;color:var(--warn)">${icon('alert')}
-          <div><b>Пункты появятся в отчётах только после проверки.</b>
-          <div class="small" style="color:var(--ink-2)">Юрист не генерирует ссылки, а только берёт их из этой базы. Пока документ не сверен с adilet.zan.kz, в отчёт попадает одно название без номера пункта.</div></div></div>
+          <div><b>Пункты сверены с текстом на adilet.zan.kz (17.10.2026).</b>
+          <div class="small" style="color:var(--ink-2)">Юрист не генерирует ссылки, а только берёт их из этой базы. Где связь пункта с видимым на видео косвенная, так и написано. Документ без проверки попадает в отчёт одним названием, без номера пункта.</div></div></div>
       </div>
       <div class="grid g-2">${Object.entries(SEED.documents).map(([id, d]) => `
         <div class="card">

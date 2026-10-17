@@ -12,6 +12,7 @@
 """
 import argparse
 import csv
+import os
 import sys
 from pathlib import Path
 
@@ -94,6 +95,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--labels", type=Path, default=Path("data/labels.csv"))
     ap.add_argument("--features", type=Path, default=Path("data/features"))
+    ap.add_argument("--videos", type=Path, default=Path(os.environ.get("XSCAN_VIDEOS", Path.home() / "Downloads/open/videos")))
     ap.add_argument("--half-window", type=float, default=1.0)
     ap.add_argument("--pos-before", type=float, default=1.0)
     ap.add_argument("--pos-after", type=float, default=3.0)
@@ -110,9 +112,13 @@ def main():
     print(f"видео: {len(data)}, с нарушением: {sum(d['tc'] is not None for d in data)}")
 
     # ---- кросс-валидация по видео ----
-    groups = np.arange(len(data))
+    # дубликаты (X-4 == X-47, X-5 == X-48) — одна группа, иначе утечка между фолдами;
+    # одинаковый размер файла == один и тот же ролик (как в ml/labels2.py)
+    keys = {}
+    groups = np.array([keys.setdefault((a.videos / d["file"]).stat().st_size, len(keys)) for d in data])
+    print(f"уникальных видео: {len(keys)}")
     oof = [None] * len(data)
-    for tr, va in GroupKFold(n_splits=min(a.folds, len(data))).split(groups, groups=groups):
+    for tr, va in GroupKFold(n_splits=min(a.folds, len(keys))).split(groups, groups=groups):
         X, Y = build([data[i] for i in tr], a)
         clf = make_clf(a.C).fit(X, Y)
         for i in va:

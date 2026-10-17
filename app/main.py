@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel
 
-from app import auth, config, jobs
+from app import auth, botapi, config, jobs
 from app.schemas import AnalyzeResponse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -111,13 +111,20 @@ def ui_analyze(file: UploadFile = File(...)):
 
 @app.get("/ui/jobs/{job_id}", dependencies=[Depends(auth.require_session)])
 def ui_job(job_id: str):
-    return _job_or_404(job_id)
+    return {**_job_or_404(job_id), "agent_findings": botapi.findings_for_job(job_id)}
+
+
+# ---------- Bot API для агентов-процессов (app/botapi.py) ----------
+app.include_router(botapi.router)
 
 
 @app.get("/health")
 def health():
+    if config.ANALYZER == "gemini":
+        from app.pipeline import gemini
+        return {"status": "ok", "analyzer": "gemini", "backend": gemini.backend(), "model": gemini.MODEL}
     from app.pipeline.detector import model_status
-    return {"status": "ok", **model_status()}
+    return {"status": "ok", "analyzer": "local", **model_status()}
 
 
 @app.on_event("startup")

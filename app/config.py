@@ -20,6 +20,8 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 API_KEY = os.getenv("API_KEY", "change-me")
+# gemini — облачный анализ (app/pipeline/gemini.py), local — CLIP + детектор, полностью офлайн
+ANALYZER = os.getenv("ANALYZER", "local").strip().lower()
 SAMPLE_FPS = float(os.getenv("SAMPLE_FPS", "4"))
 WORKERS = int(os.getenv("WORKERS", "1"))
 DETECTOR_THRESHOLD = os.getenv("DETECTOR_THRESHOLD")  # None -> из модели

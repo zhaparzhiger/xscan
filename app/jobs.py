@@ -7,7 +7,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from app import config
+from app import botapi, config
 from app.pipeline.analyze import analyze_video
 
 log = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ def submit(video_path: Path) -> str:
     job_id = video_path.stem
     with _lock:
         _save({"job_id": job_id, "status": "processing", "verdict": None, "violations": []})
+    botapi.create_task(job_id, video_path)  # видео сразу доступно внешним агентам
     _executor.submit(_run, job_id, video_path)
     return job_id
 

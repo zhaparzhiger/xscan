@@ -7,3 +7,6 @@ numpy>=1.26
 opencv-python-headless>=4.10
 scikit-learn>=1.5
 joblib>=1.4
+# Vertex AI через сервисный аккаунт (ANALYZER=gemini + GOOGLE_APPLICATION_CREDENTIALS)
+google-auth>=2.30
+requests>=2.31
