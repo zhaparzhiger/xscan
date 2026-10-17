@@ -1,0 +1,4 @@
+# CPU-сборка torch: pip install -r requirements-ml.txt --extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.5
+torchvision>=0.20
+open_clip_torch>=2.26

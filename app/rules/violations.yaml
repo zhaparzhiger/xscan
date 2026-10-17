@@ -1,0 +1,76 @@
+# База знаний: тип нарушения -> что видно на видео -> норматив.
+#
+# !!! ВАЖНО (критерий 4, 15 баллов: "отсутствие выдуманных ссылок"):
+#   - Типы ниже — ГИПОТЕЗЫ по первым кадрам датасета. Посмотрите все 22 ролика с нарушениями,
+#     впишите тип в data/labels.csv (колонка type) и поправьте этот список.
+#   - Документы и пункты заполняет тот, кто делает ресёрч на adilet.zan.kz.
+#     Пока verified: false — в описании нарушения пункт НЕ выводится, только название документа.
+#   - clip_prompts — английские фразы для zero-shot классификации (fallback, пока нет обученной модели).
+
+documents:
+  security_rules:
+    title: "Правила организации охраны и устройства помещений банков второго уровня (постановление Правления НБРК от 24.02.2020 № 14, с изм. от 24.12.2024 № 88)"
+    url: null          # TODO: ссылка adilet.zan.kz
+    verified: false    # TODO: сверить название/номер с adilet
+  cash_rules:
+    title: "Правила ведения кассовых операций в банках второго уровня (действующая редакция — НАЙТИ на adilet.zan.kz)"
+    url: null
+    verified: false
+
+violations:
+  unauthorized_person:
+    title: "Посторонний в кассовом помещении"
+    observed: "в кассовой зоне находится лицо, не являющееся кассиром, рядом с рабочим местом/ценностями"
+    why: "доступ посторонних лиц в кассовое помещение ограничен требованиями к охране кассовых помещений"
+    document: security_rules
+    clause: null       # TODO: пункт
+    clip_prompts:
+      - "a stranger standing next to the cashier desk in a cash room"
+      - "two people behind the cashier desk"
+
+  cashier_left_workplace:
+    title: "Кассир оставил рабочее место с ценностями без присмотра"
+    observed: "кассир отходит от рабочего места или покидает помещение, ценности/техника остаются без присмотра"
+    why: "ценности не должны оставаться без контроля ответственного работника"
+    document: cash_rules
+    clause: null
+    clip_prompts:
+      - "an empty cashier desk with money left on it"
+      - "the cashier walks away from the desk leaving cash unattended"
+
+  safe_left_open:
+    title: "Сейф оставлен открытым"
+    observed: "дверца сейфа/хранилища открыта, кассир не находится рядом"
+    why: "хранилища ценностей должны быть закрыты, когда с ними не работают"
+    document: security_rules
+    clause: null
+    clip_prompts:
+      - "an open metal safe in an office with nobody near it"
+
+  improper_handover:
+    title: "Нарушение порядка передачи ценностей (инкассация)"
+    observed: "сумка/пакет с ценностями передаётся вне установленного порядка (через дверь, вне кассовой зоны, без проверки)"
+    why: "передача ценностей инкассаторам выполняется по установленной процедуре"
+    document: cash_rules
+    clause: null
+    clip_prompts:
+      - "a cashier handing a bag to a man in a suit across the desk"
+      - "a cash collection bag being passed through a doorway"
+
+  door_open:
+    title: "Дверь кассового помещения открыта во время работы с ценностями"
+    observed: "дверь кассового помещения открыта, в это время ведётся работа с наличными"
+    why: "кассовое помещение во время операций должно быть закрыто"
+    document: security_rules
+    clause: null
+    clip_prompts:
+      - "an open glass door of a cash room while the cashier counts money"
+
+  # Универсальный тип — для нарушений, которых не было в обучении (FAQ п.9).
+  generic:
+    title: "Признаки возможного нарушения кассовой дисциплины"
+    observed: "зафиксировано нетипичное действие в кассовой зоне"
+    why: "действие отличается от штатного порядка работы кассира и требует проверки человеком"
+    document: cash_rules
+    clause: null
+    clip_prompts: []

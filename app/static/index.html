@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Контроль кассовой дисциплины</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>Контроль кассовой дисциплины</h1>
+  <p class="sub">Загрузите видеозапись кассы, и сервис найдёт признаки возможных нарушений. Результат служит подсказкой для проверяющего и не является заключением.</p>
+</header>
+
+<main>
+  <section id="upload" class="card">
+    <label id="drop" for="file">
+      <input id="file" type="file" accept=".mov,.mp4,video/*" hidden>
+      <strong>Перетащите видео сюда</strong> или нажмите, чтобы выбрать файл (.mov)
+    </label>
+    <div id="progress" hidden><div id="bar"></div></div>
+    <p id="status" class="muted"></p>
+  </section>
+
+  <section id="result" hidden>
+    <div id="verdict" class="card"></div>
+    <div class="grid">
+      <div class="card">
+        <video id="player" controls muted playsinline></video>
+        <canvas id="timeline" height="60"></canvas>
+        <p class="muted small">График показывает вероятность нарушения по времени. Нажмите на него, чтобы перейти к этому моменту видео.</p>
+      </div>
+      <div id="violations"></div>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

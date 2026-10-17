@@ -1,9 +1,15 @@
 __pycache__/
+*.pyc
 .venv/
+venv/
 node_modules/
 .env
 *.mov
 *.mp4
+# датасет организаторов и всё производное (разметка, признаки) — только локально, не в git
 data/
 weights/
+# обученные модели передавать файлом
 models/
+.idea/
+.vscode/

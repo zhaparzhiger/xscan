@@ -1,0 +1,32 @@
+:root {
+  --bg: #f4f5f7; --card: #fff; --text: #1d1f23; --muted: #6b7280; --border: #e3e5e8;
+  --accent: #a6192e; --ok: #1f7a4d; --warn: #b42318; --warn-bg: #fdecea; --ok-bg: #e7f5ee;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #15171a; --card: #1e2125; --text: #e8eaed; --muted: #9aa0a6; --border: #2e3237;
+          --warn-bg: #3a1d1b; --ok-bg: #16301f; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+header { padding: 24px 16px 8px; max-width: 1200px; margin: 0 auto; }
+h1 { margin: 0 0 4px; font-size: 24px; }
+.sub, .muted { color: var(--muted); }
+.small { font-size: 13px; }
+main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 40px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+#drop { display: block; border: 2px dashed var(--border); border-radius: 10px; padding: 36px 16px; text-align: center; cursor: pointer; }
+#drop.over { border-color: var(--accent); }
+#progress { height: 6px; background: var(--border); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+#bar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+#verdict { font-size: 20px; font-weight: 600; }
+#verdict.bad { background: var(--warn-bg); color: var(--warn); }
+#verdict.good { background: var(--ok-bg); color: var(--ok); }
+.grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+video { width: 100%; max-height: 70vh; background: #000; border-radius: 8px; }
+canvas { width: 100%; margin-top: 8px; cursor: pointer; }
+.v h3 { margin: 0 0 6px; font-size: 17px; }
+.tc { display: inline-block; background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 2px 8px; font: inherit; cursor: pointer; margin-right: 8px; }
+.frames { display: flex; gap: 8px; overflow-x: auto; margin: 10px 0; }
+.frames img { height: 220px; border-radius: 6px; border: 1px solid var(--border); cursor: zoom-in; }
+.rule { font-size: 13px; border-left: 3px solid var(--accent); padding-left: 10px; color: var(--muted); }
