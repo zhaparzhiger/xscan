@@ -14,7 +14,7 @@ from app.schemas import AnalyzeResponse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
-app = FastAPI(title="ForteBank Cashier AI", version="0.1.0")
+app = FastAPI(title="ForteBank XScan", version="0.1.0")
 
 ALLOWED_EXT = {".mov", ".mp4", ".m4v", ".avi", ".mkv"}
 API_FIELDS = ("type", "timecode_sec", "description", "evidence_frames")

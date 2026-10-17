@@ -1,4 +1,4 @@
-/* Cashier AI — CRM-прототип. Без сборки: классические скрипты, хеш-роутинг (#/agents и т.п.). */
+/* XScan — CRM-прототип. Без сборки: классические скрипты, хеш-роутинг (#/agents и т.п.). */
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -70,7 +70,7 @@
         <aside class="side" id="side">
           <div class="brand">
             <img class="brand-logo" src="img/logo.svg" alt="" width="42" height="43">
-            <div><div class="brand-name">Cashier AI</div>
+            <div><div class="brand-name">XScan</div>
             <div class="brand-sub">Контроль кассовой дисциплины</div></div>
           </div>
           <nav class="nav">
@@ -920,11 +920,11 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
   ];
 
   function landing() {
-    document.title = 'Cashier AI — контроль кассовой дисциплины по видео';
+    document.title = 'XScan — контроль кассовой дисциплины по видео';
     $('#app').innerHTML = `
     <div class="pub">
       <header class="pub-nav">
-        <a class="pub-brand" href="#/"><img src="img/logo.svg" alt="" width="36" height="37"><span>Cashier AI</span></a>
+        <a class="pub-brand" href="#/"><img src="img/logo.svg" alt="" width="36" height="37"><span>XScan</span></a>
         <nav class="pub-links" aria-label="Разделы страницы">
           <a href="#how" data-scroll="how">Как работает</a><a href="#agents" data-scroll="agents">Агенты</a><a href="#trust" data-scroll="trust">Безопасность</a><a href="#api" data-scroll="api">API</a>
         </nav>
@@ -1012,7 +1012,7 @@ curl .../api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"
       </section>
 
       <footer class="pub-foot">
-        <span>Cashier AI · Datathon 26</span>
+        <span>XScan · Datathon 26</span>
         <span>Результат — подсказка для проверки человеком, а не юридическое заключение.</span>
       </footer>
     </div>`;
@@ -1031,7 +1031,7 @@ curl .../api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"
     <div class="art-desk"></div>`;
 
   async function loginScreen(err = '') {
-    document.title = 'Вход · Cashier AI';
+    document.title = 'Вход · XScan';
     document.body.classList.add('is-auth');
     const online = API.online.value;
     $('#app').innerHTML = `
@@ -1044,7 +1044,7 @@ curl .../api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"
         <div class="auth-box">
           <div class="auth-head">
             <img class="auth-logo" src="img/logo.svg" alt="" width="72" height="73">
-            <h1>Cashier AI</h1>
+            <h1>XScan</h1>
             <p>Контроль кассовой дисциплины</p>
           </div>
           <form class="auth-card" id="login-form" autocomplete="on">
@@ -1102,7 +1102,7 @@ curl .../api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"
     }
     if (page() === 'login' || !PAGES[page()]) { history.replaceState(null, '', '#/dashboard'); }
     document.body.classList.remove('is-auth');
-    if (!$('#page')) { document.title = 'Cashier AI'; shell(); renderConn(); }
+    if (!$('#page')) { document.title = 'XScan'; shell(); renderConn(); }
     route();
   }
 
