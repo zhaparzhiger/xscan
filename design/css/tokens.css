@@ -1,0 +1,233 @@
+/* Дизайн-токены. Стиль: <html data-style="forte|1torg|school|9bar|arzandau">, тема: data-mode="light|dark".
+   Акцент задаёт стиль; мягкие подложки считаются из него через color-mix, поэтому новый стиль = 10 строк. */
+
+:root {
+  color-scheme: light;
+  --font: 'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font);
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --bg: #f6f4f5;
+  --bg-pattern: none;
+  --surface: #ffffff;
+  --surface-2: #f3f1f2;
+  --surface-3: #ebe8ea;
+  --glass: var(--surface);
+  --blur: none;
+  --line: #e7e3e5;
+  --ink: #1d1a1c;
+  --ink-2: #4a4548;
+  --muted: #7a7377;
+
+  --accent: #a3154f;
+  --accent-2: #c42a6a;
+  --on-accent: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  --accent-line: color-mix(in srgb, var(--accent) 28%, var(--surface));
+
+  --ok: #1f8a55;
+  --warn: #b26a00;
+  --danger: #c0352b;
+  --info: #2c62c9;
+  --ok-soft: color-mix(in srgb, var(--ok) 12%, var(--surface));
+  --warn-soft: color-mix(in srgb, var(--warn) 13%, var(--surface));
+  --danger-soft: color-mix(in srgb, var(--danger) 11%, var(--surface));
+  --info-soft: color-mix(in srgb, var(--info) 11%, var(--surface));
+
+  --side-bg: #2b0d1c;
+  --side-ink: #f6e9ef;
+  --side-muted: rgb(246 233 239 / .58);
+  --side-active: rgb(255 255 255 / .1);
+  --side-line: rgb(255 255 255 / .09);
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-btn: 12px;
+  --shadow-sm: 0 1px 2px rgb(30 10 20 / .05), 0 2px 8px rgb(30 10 20 / .04);
+  --shadow: 0 8px 28px rgb(60 10 35 / .08);
+  --shadow-lg: 0 24px 64px rgb(60 10 35 / .16);
+  --lift: 0px;
+  --ease: cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ───────── Графит: чёрно-белый, как главная и вход. Цвет только у статусов ───────── */
+[data-style="graphite"] {
+  --accent: #1d2125;
+  --accent-2: #474d55;
+  --on-accent: #ffffff;
+  --accent-soft: #ececea;
+  --accent-line: #d3d4d1;
+  --bg: #f6f6f4;
+  --surface: #ffffff;
+  --surface-2: #f0f0ee;
+  --surface-3: #e2e2df;
+  --line: #e5e5e2;
+  --ink: #15181b;
+  --ink-2: #474c52;
+  --muted: #6b7076;
+  --side-bg: #15181b;
+  --side-ink: #eef0ee;
+  --side-muted: rgb(238 240 238 / .55);
+  --side-active: rgb(255 255 255 / .08);
+  --side-line: rgb(255 255 255 / .08);
+  --radius: 16px;
+  --radius-lg: 22px;
+  --shadow: 0 8px 28px rgb(15 18 20 / .06);
+  --shadow-lg: 0 20px 50px rgb(15 18 20 / .14);
+  --font: 'Onest', system-ui, sans-serif;
+  --font-display: 'Onest', system-ui, sans-serif;
+}
+[data-mode="dark"][data-style="graphite"] {
+  --accent: #eef0ee; --accent-2: #c3c7cb; --on-accent: #15181b;
+  --accent-soft: #26292d; --accent-line: #3a3e43;
+}
+
+/* ───────── Forte: малиновый, глубокий сливовый сайдбар ───────── */
+[data-style="forte"] {
+  --accent: #a3154f;
+  --accent-2: #d0306f;
+  --font: 'Onest', system-ui, sans-serif;
+  --font-display: 'Onest', system-ui, sans-serif;
+}
+
+/* ───────── 1torg: белый + зелёный, сетка на фоне, мягкие зелёные тени ───────── */
+[data-style="1torg"] {
+  --accent: #43a047;
+  --accent-2: #66bb6a;
+  --bg: #f8fafc;
+  --bg-pattern: linear-gradient(rgb(76 175 80 / .06) 1px, transparent 1px) 0 0 / 32px 32px,
+                linear-gradient(90deg, rgb(76 175 80 / .06) 1px, transparent 1px) 0 0 / 32px 32px;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --line: #e2e8f0;
+  --ink: #1e293b;
+  --ink-2: #475569;
+  --muted: #64748b;
+  --side-bg: #ffffff;
+  --side-ink: #1e293b;
+  --side-muted: #64748b;
+  --side-active: #e8f5e9;
+  --side-line: #e2e8f0;
+  --radius: 18px;
+  --radius-lg: 24px;
+  --shadow: 0 12px 32px rgb(76 175 80 / .12);
+  --shadow-lg: 0 20px 60px rgb(76 175 80 / .18);
+  --font: 'Inter', system-ui, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+}
+
+/* ───────── School: стекло, зелёный градиент, Onest + JetBrains Mono ───────── */
+[data-style="school"] {
+  --accent: #16a34a;
+  --accent-2: #22c55e;
+  --bg: #eefbf3;
+  --bg-pattern: radial-gradient(900px 600px at 10% -10%, rgb(34 197 94 / .22), transparent 60%),
+                radial-gradient(800px 500px at 110% 10%, rgb(134 239 172 / .3), transparent 60%);
+  --glass: rgb(255 255 255 / .72);
+  --blur: blur(14px) saturate(1.3);
+  --surface-2: #f1f5f9;
+  --line: rgb(15 23 42 / .08);
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --side-bg: rgb(255 255 255 / .6);
+  --side-ink: #0f172a;
+  --side-muted: #64748b;
+  --side-active: rgb(34 197 94 / .14);
+  --side-line: rgb(15 23 42 / .06);
+  --radius: 16px;
+  --radius-lg: 24px;
+  --shadow: 0 8px 32px rgb(34 197 94 / .1), 0 2px 8px rgb(0 0 0 / .05);
+  --font: 'Onest', system-ui, sans-serif;
+}
+
+/* ───────── 9bar / Brewline: бумага и чернила, малина, пилюли, Jost ───────── */
+[data-style="9bar"] {
+  --accent: #b8236f;
+  --accent-2: #c93580;
+  --bg: #f2f0eb;
+  --surface: #ffffff;
+  --surface-2: #e8e5de;
+  --surface-3: #dedad2;
+  --line: #dcd8d0;
+  --ink: #161817;
+  --ink-2: #4a4845;
+  --muted: #67635c;
+  --side-bg: #161817;
+  --side-ink: #f2f0eb;
+  --side-muted: rgb(242 240 235 / .6);
+  --side-active: rgb(242 240 235 / .1);
+  --side-line: rgb(255 255 255 / .12);
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-btn: 999px;
+  --shadow: none;
+  --shadow-sm: none;
+  --font: 'Onest', system-ui, sans-serif;
+  --font-display: 'Jost', 'Futura', system-ui, sans-serif;
+}
+
+/* ───────── Arzandau: голубой, карточки приподнимаются ───────── */
+[data-style="arzandau"] {
+  --accent: #0088ee;
+  --accent-2: #33aaff;
+  --bg: #f5f9ff;
+  --surface-2: #f0f6ff;
+  --surface-3: #e1eefc;
+  --line: #e3ecf7;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --side-bg: #0b1b33;
+  --side-ink: #e8f2ff;
+  --side-muted: rgb(232 242 255 / .58);
+  --side-active: rgb(0 149 255 / .2);
+  --side-line: rgb(255 255 255 / .08);
+  --radius: 16px;
+  --shadow: 0 4px 16px rgb(0 0 0 / .06);
+  --shadow-lg: 0 16px 40px rgb(0 149 255 / .18);
+  --lift: -4px;
+  --font: 'Inter', system-ui, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+}
+
+/* ───────── Тёмная тема: общие нейтрали для всех стилей ───────── */
+[data-mode="dark"] {
+  color-scheme: dark;
+  --bg: #111013;
+  --surface: #1a191d;
+  --surface-2: #232227;
+  --surface-3: #2d2b31;
+  --glass: rgb(26 25 29 / .78);
+  --line: #2e2c33;
+  --ink: #f1eef2;
+  --ink-2: #c9c4cc;
+  --muted: #8f8994;
+  --on-accent: #ffffff;
+  --side-bg: #0c0b0e;
+  --side-ink: #f1eef2;
+  --side-muted: rgb(241 238 242 / .55);
+  --side-active: rgb(255 255 255 / .07);
+  --side-line: rgb(255 255 255 / .07);
+  --shadow-sm: none;
+  --shadow: 0 1px 0 rgb(255 255 255 / .03);
+  --shadow-lg: 0 24px 64px rgb(0 0 0 / .5);
+  --ok: #4cc488;
+  --warn: #e7a33e;
+  --danger: #f06a5f;
+  --info: #6b9cf5;
+}
+[data-mode="dark"][data-style="forte"] { --accent: #e0447f; --accent-2: #f06a9a; }
+[data-mode="dark"][data-style="1torg"] {
+  --accent: #6fd36f; --on-accent: #0b1a0c;
+  --bg-pattern: linear-gradient(rgb(111 211 111 / .05) 1px, transparent 1px) 0 0 / 32px 32px,
+                linear-gradient(90deg, rgb(111 211 111 / .05) 1px, transparent 1px) 0 0 / 32px 32px;
+}
+[data-mode="dark"][data-style="school"] {
+  --accent: #4ade80; --on-accent: #052e16;
+  --bg-pattern: radial-gradient(900px 600px at 10% -10%, rgb(34 197 94 / .16), transparent 60%);
+  --side-bg: rgb(17 16 19 / .7);
+}
+[data-mode="dark"][data-style="9bar"] { --accent: #e0559c; --bg: #121312; --surface: #1b1c1b; }
+[data-mode="dark"][data-style="arzandau"] { --accent: #3aa9ff; --bg: #0b1220; --surface: #121b2b; --surface-2: #18233a; --line: #22304a; }

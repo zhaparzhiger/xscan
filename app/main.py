@@ -3,11 +3,13 @@ import logging
 import secrets
 import shutil
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, Response, UploadFile
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import config, jobs
+from pydantic import BaseModel
+
+from app import auth, config, jobs
 from app.schemas import AnalyzeResponse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -70,14 +72,44 @@ def api_job(job_id: str):
     return _public(_job_or_404(job_id))
 
 
-# ---------- Эндпоинты для веб-интерфейса (без ключа, с расширенными полями) ----------
+# ---------- Веб-интерфейс: вход по логину/паролю, расширенные поля ----------
 
-@app.post("/ui/analyze")
+class LoginIn(BaseModel):
+    login: str
+    password: str
+
+
+@app.post("/ui/login")
+def ui_login(body: LoginIn, request: Request, response: Response):
+    token = auth.login(request, body.login.strip(), body.password)
+    response.set_cookie(auth.COOKIE, token, max_age=auth.SESSION_TTL, httponly=True,
+                        samesite="lax", secure=auth.is_https(request))
+    return {"user": body.login.strip()}
+
+
+@app.post("/ui/logout")
+def ui_logout(response: Response):
+    response.delete_cookie(auth.COOKIE)
+    return {"ok": True}
+
+
+@app.get("/ui/config")
+def ui_config():
+    """Публичные настройки экрана входа: тестовая учётка (если включена в .env)."""
+    return {"demo": auth.demo_credentials()}
+
+
+@app.get("/ui/me")
+def ui_me(user: str = Depends(auth.require_session)):
+    return {"user": user}
+
+
+@app.post("/ui/analyze", dependencies=[Depends(auth.require_session)])
 def ui_analyze(file: UploadFile = File(...)):
     return {"job_id": _store_upload(file), "status": "processing"}
 
 
-@app.get("/ui/jobs/{job_id}")
+@app.get("/ui/jobs/{job_id}", dependencies=[Depends(auth.require_session)])
 def ui_job(job_id: str):
     return _job_or_404(job_id)
 
@@ -94,8 +126,11 @@ def _startup() -> None:
 
 
 app.mount("/static", StaticFiles(directory=config.STATIC_DIR), name="static")
+# CRM-интерфейс: /design/ (вход по логину, см. app/auth.py)
+if (config.ROOT / "design").is_dir():
+    app.mount("/design", StaticFiles(directory=config.ROOT / "design", html=True), name="design")
 
 
 @app.get("/")
 def index():
-    return FileResponse(config.STATIC_DIR / "index.html")
+    return RedirectResponse("/design/")

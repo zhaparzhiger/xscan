@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 124" role="img" aria-label="Cashier AI">
+  <g stroke="#1f7f73" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 26h8l8 8M10 50h14M14 74h8l8-8"/>
+    <path d="M106 26h-8l-8 8M110 50H96M106 74h-8l-8-8"/>
+  </g>
+  <g fill="#36b08f">
+    <circle cx="12" cy="24" r="8"/><circle cx="9" cy="50" r="8"/><circle cx="12" cy="76" r="8"/>
+    <circle cx="108" cy="24" r="8"/><circle cx="111" cy="50" r="8"/><circle cx="108" cy="76" r="8"/>
+  </g>
+  <rect x="52" y="94" width="16" height="28" rx="2" fill="#36b08f"/>
+  <path d="M44 84h32l-4 12H48z" fill="#ffffff" stroke="#1f7f73" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="60" cy="50" r="38" fill="#ffffff" stroke="#1f7f73" stroke-width="5"/>
+  <circle cx="60" cy="50" r="30" fill="#6fe0c2" stroke="#1f7f73" stroke-width="3.5"/>
+  <g stroke="#1f7f73" stroke-width="3" stroke-linecap="round">
+    <path d="M50 26v6M57 26v6M64 26v6M71 26v6M50 68v6M57 68v6M64 68v6M71 68v6"/>
+    <path d="M36 42h6M36 50h6M36 58h6M78 42h6M78 50h6M78 58h6"/>
+  </g>
+  <rect x="42" y="32" width="36" height="36" rx="4" fill="#ffffff" stroke="#1f7f73" stroke-width="3.5"/>
+  <rect x="48" y="38" width="24" height="24" rx="2" fill="#ffffff" stroke="#1f7f73" stroke-width="3"/>
+  <text x="60" y="56" text-anchor="middle" font-family="Onest, Arial, sans-serif" font-weight="800" font-size="14" fill="#1f7f73">AI</text>
+</svg>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru" data-style="1torg" data-mode="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cashier AI</title>
+  <meta name="description" content="Контроль кассовой дисциплины по видео: агенты, проверки, обучение">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Jost:wght@500;600;700&family=JetBrains+Mono:wght@400;600&family=Onest:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // тема до первой отрисовки, чтобы не мигало
+    try {
+      const s = JSON.parse(localStorage.getItem('cashier-crm-v3') || '{}');
+      if (s.style) document.documentElement.dataset.style = s.style;
+      document.documentElement.dataset.mode = s.mode || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <!-- JSZip — только чтобы показать состав архива до загрузки; без него всё работает -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+  <script src="js/icons.js" defer></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
