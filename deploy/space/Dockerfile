@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY design ./design
 COPY start.sh ./
+RUN sed -i "s/$//" start.sh
 RUN mkdir -p data models && chown -R user /home/user/app
 USER user
 ENV GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json PYTHONUNBUFFERED=1
