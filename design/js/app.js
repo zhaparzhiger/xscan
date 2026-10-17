@@ -107,10 +107,15 @@
   function renderConn() {
     const el = $('#conn');
     if (!el) return;
-    el.innerHTML = API.online.value
+    const net = navigator.onLine
+      ? `<span class="badge" title="Модели работают локально, облачные сервисы не используются"><span class="dot"></span>Облако не используется</span>`
+      : `<span class="badge b-warn" title="Интернета нет, анализ продолжает работать локально"><span class="dot"></span>Нет интернета · работает локально</span>`;
+    el.innerHTML = (API.online.value
       ? `<span class="badge b-ok"><span class="dot"></span>Сервер подключён</span>`
-      : `<span class="badge b-warn demo-flag" title="Бэкенд не найден: анализ имитируется, метрики демонстрационные"><span class="dot"></span>Демо-режим</span>`;
+      : `<span class="badge b-warn demo-flag" title="Бэкенд не найден: анализ имитируется, метрики демонстрационные"><span class="dot"></span>Демо-режим</span>`) + ' ' + net;
   }
+  window.addEventListener('online', () => renderConn());
+  window.addEventListener('offline', () => renderConn());
 
   function toast(msg, ic = 'check') {
     const t = document.createElement('div');
