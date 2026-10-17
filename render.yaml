@@ -1,0 +1,36 @@
+# Render Blueprint — Cashier AI (сервер + веб-интерфейс), бесплатный план.
+# Free засыпает после ~15 минут без запросов; первый запрос будит сервис примерно за минуту.
+# Значения с sync: false Render попросит вставить при создании (их нет в git): см. RENDER_SECRETS.local.txt.
+services:
+  - type: web
+    name: cashier-ai
+    runtime: python
+    plan: free
+    branch: zhiger
+    buildCommand: pip install -r requirements.txt
+    startCommand: sh deploy/render_start.sh
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ANALYZER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: WORKERS
+        value: "3"
+      - key: SESSION_SECRET
+        generateValue: true
+      # ключ для жюри (заголовок X-API-Key)
+      - key: API_KEY
+        sync: false
+      # вход в веб-интерфейс
+      - key: UI_USERS
+        sync: false
+      - key: UI_DEMO_LOGIN
+        sync: false
+      - key: UI_DEMO_PASSWORD
+        sync: false
+      # содержимое JSON-файла сервисного аккаунта Google целиком
+      - key: GOOGLE_CREDENTIALS_JSON
+        sync: false

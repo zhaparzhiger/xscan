@@ -41,25 +41,27 @@ def eval_summary() -> str | None:
 
 
 def main() -> None:
-    name = sys.argv[1] if len(sys.argv) > 1 else "cashier-ai"
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    name = args[0] if args else "cashier-ai"
     env = dotenv_values(ROOT / ".env")
     api = HfApi()
     user = api.whoami()["name"]
     repo_id = f"{user}/{name}"
     api.create_repo(repo_id, repo_type="space", space_sdk="docker", exist_ok=True, private=False)
 
-    for k in SECRET_KEYS:
-        if env.get(k):
-            api.add_space_secret(repo_id, k, env[k])
     for k in VARIABLE_KEYS:
         if env.get(k):
             api.add_space_variable(repo_id, k, env[k])
-    sa = env.get("GOOGLE_APPLICATION_CREDENTIALS")
-    if sa:
-        api.add_space_secret(repo_id, "GOOGLE_CREDENTIALS_JSON", Path(sa).read_text(encoding="utf-8"))
-    report = eval_summary()
-    if report:
-        api.add_space_secret(repo_id, "EVAL_REPORT_JSON", report)
+    if "--no-secrets" not in sys.argv:
+        for k in SECRET_KEYS:
+            if env.get(k):
+                api.add_space_secret(repo_id, k, env[k])
+        sa = env.get("GOOGLE_APPLICATION_CREDENTIALS")
+        if sa:
+            api.add_space_secret(repo_id, "GOOGLE_CREDENTIALS_JSON", Path(sa).read_text(encoding="utf-8"))
+        report = eval_summary()
+        if report:
+            api.add_space_secret(repo_id, "EVAL_REPORT_JSON", report)
 
     with tempfile.TemporaryDirectory() as d:
         build(Path(d))
