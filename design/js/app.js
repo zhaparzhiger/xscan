@@ -563,8 +563,16 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
     const detectors = S.agents.filter((a) => a.enabled);
     for (const v of res.violations) v.agent = v.agent || (detectors.find((a) => a.types.includes(v.type_id)) || {}).id;
     res.file = meta?.file || `${res.job_id}.mov`;
+    // агенты загораются по найденным типам — как после живой проверки
+    const pipeline = [...detectors, ...SEED.service.map((s) => ({ ...s, model: '' }))];
+    const st = Object.fromEntries(pipeline.map((a) => {
+      const mine = res.violations.filter((v) => v.agent === a.id);
+      if (a.id === 'lawyer') return [a.id, { state: 'clear', msg: res.violations.length ? 'норматив подобран из проверенной базы' : 'ссылки не требуются' }];
+      if (a.id === 'aggregator') return [a.id, { state: res.violations.length ? 'alert' : 'clear', msg: res.violations.length ? `вердикт: признаки нарушений (${res.violations.length})` : 'вердикт: нарушение не обнаружено' }];
+      return [a.id, mine.length ? { state: 'alert', msg: `нашёл на ${mine.map((v) => fmt(v.timecode_sec)).join(', ')}` } : { state: 'clear', msg: 'признаков не найдено' }];
+    }));
     S.run = { file: { name: res.file, size: 0 }, url: `/ui/jobs/${res.job_id}/video`, result: res, phase: `Готово за ${res.processing_sec} с`,
-      overall: 1, feed: [], pipeline: [], st: {} };
+      overall: 1, feed: [], pipeline, st };
     location.hash = '#/check';
     if (page() === 'check') route();
   }
@@ -949,7 +957,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
               <div class="axis"><span>00:00</span><span>00:15</span><span>00:30</span><b>00:44.2</b><span>01:00</span></div>
               <i class="playhead"></i>
             </div>
-            <div class="tl-verdict"><i></i><b>Посторонний в кассовом помещении</b><span>подтверждено скептиком · норматив из базы</span></div>
+            <div class="tl-verdict"><i></i><b>Посторонний в кассовом помещении</b><span>таймкод, кадр и норматив из проверенной базы</span></div>
           </div>
         </div>
       </section>
