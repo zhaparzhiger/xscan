@@ -134,10 +134,10 @@ def ui_job(job_id: str):
 
 @app.get("/ui/eval", dependencies=[Depends(auth.require_session)])
 def ui_eval():
-    """Последний замер на открытом датасете (его пишет ml/eval_gemini.py) — для страницы «Замер»."""
+    """Последний замер на открытом датасете (его пишет ml/eval_vlm.py) — для страницы «Замер»."""
     f = config.DATA_DIR / "eval_report.json"
     if not f.exists():
-        raise HTTPException(404, "замер ещё не запускали: python ml/eval_gemini.py")
+        raise HTTPException(404, "замер ещё не запускали: python ml/eval_vlm.py")
     return Response(f.read_text(encoding="utf-8"), media_type="application/json")
 
 
@@ -147,9 +147,9 @@ app.include_router(botapi.router)
 
 @app.get("/health")
 def health():
-    if config.ANALYZER == "gemini":
-        from app.pipeline import gemini
-        return {"status": "ok", "analyzer": "gemini", "backend": gemini.backend(), "model": gemini.MODEL}
+    if config.ANALYZER == "vlm":
+        from app.pipeline import vlm
+        return {"status": "ok", "analyzer": "vlm", "backend": vlm.backend()}
     from app.pipeline.detector import model_status
     return {"status": "ok", "analyzer": "local", **model_status()}
 

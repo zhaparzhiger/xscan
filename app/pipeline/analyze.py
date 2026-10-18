@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 
 
 def analyze_video(path: Path) -> dict:
-    if config.ANALYZER == "gemini":
-        return _analyze_gemini(path)
+    if config.ANALYZER == "vlm":
+        return _analyze_vlm(path)
     t0 = time.time()
     info = video.probe(path)
     # Длинное видео -> реже выборка, чтобы уложиться в бюджет 5 минут
@@ -58,14 +58,14 @@ def analyze_video(path: Path) -> dict:
     }
 
 
-def _analyze_gemini(path: Path) -> dict:
-    from app.pipeline import gemini
+def _analyze_vlm(path: Path) -> dict:
+    from app.pipeline import vlm
 
     t0 = time.time()
     info = video.probe(path)
-    ans = gemini.ask(path, info.duration_sec)
-    found = gemini.violations(ans, info.duration_sec)
-    log.info("%s: gemini %s за %.1fs, %d КБ, нарушений %d", path.name, ans["_model"], ans["_sec"],
+    ans = vlm.ask(path, info.duration_sec)
+    found = vlm.violations(ans, info.duration_sec)
+    log.info("%s: vlm %s за %.1fs, %d КБ, нарушений %d", path.name, ans["_model"], ans["_sec"],
              ans["_bytes"] // 1024, len(found))
 
     violations = []
@@ -88,7 +88,7 @@ def _analyze_gemini(path: Path) -> dict:
         "violations": violations,
         "duration_sec": round(info.duration_sec, 2),
         "processing_sec": round(time.time() - t0, 1),
-        "analyzer": f"gemini/{ans['_model']}",
+        "analyzer": "vlm",
         "scene_summary": ans.get("scene_summary", ""),
     }
 

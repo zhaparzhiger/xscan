@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 HERE = Path(__file__).resolve().parent / "space"
 
 SECRET_KEYS = ["API_KEY", "SESSION_SECRET", "UI_USERS", "UI_DEMO_LOGIN", "UI_DEMO_PASSWORD"]
-VARIABLE_KEYS = ["ANALYZER", "GEMINI_MODEL", "WORKERS", "SAMPLE_FPS"]
+VARIABLE_KEYS = ["ANALYZER", "VLM_MODEL", "VLM_FALLBACK_MODELS", "WORKERS", "SAMPLE_FPS"]
 
 
 def build(dst: Path) -> None:

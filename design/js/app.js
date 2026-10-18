@@ -106,8 +106,8 @@
   const navItem = ([id, label, ic], count = '') =>
     `<a href="#/${id}" data-nav="${id}">${icon(ic)}<span>${label}</span>${count ? `<span class="count">${count}</span>` : ''}</a>`;
 
-  // Облачный режим (ANALYZER=gemini): видео уходит в Gemini — так и пишем, без обещаний «всё локально»
-  const isCloud = () => API.online.info?.analyzer === 'gemini';
+  // Режим VLM по API (ANALYZER=vlm): видео уходит на анализ модели — без обещаний «всё локально»
+  const isCloud = () => API.online.info?.analyzer === 'vlm';
 
   function renderConn() {
     const el = $('#conn');
@@ -414,7 +414,7 @@ curl ${esc(origin)}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"<
   const AFTER = {
     dashboard() {
       API.evalReport().then((r) => { const b = $('#dash-eval'); if (b) b.innerHTML = evalCard(r); })
-        .catch(() => { const b = $('#dash-eval'); if (b) b.innerHTML = '<div class="empty">Замер ещё не запускали: <span class="mono">ml/eval_gemini.py</span></div>'; });
+        .catch(() => { const b = $('#dash-eval'); if (b) b.innerHTML = '<div class="empty">Замер ещё не запускали: <span class="mono">ml/eval_vlm.py</span></div>'; });
       loadJobs().then((rows) => { const b = $('#dash-jobs'); if (b) b.innerHTML = historyTable(rows.slice(0, 6)); });
     },
     history() {

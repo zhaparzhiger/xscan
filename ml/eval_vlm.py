@@ -1,11 +1,11 @@
-"""Замер Gemini-анализатора на открытом датасете: 40 уникальных видео (дубликаты X-4/X-47, X-5/X-48 склеены).
+"""Замер VLM-анализатора на открытом датасете: 40 уникальных видео (дубликаты X-4/X-47, X-5/X-48 склеены).
 
 Обучения нет (zero-shot), поэтому кросс-валидация не нужна. Но подсказки в промпте (SCENE_NOTES) составлены
 по этим же роликам — цифры оптимистичнее, чем будут на закрытом тесте.
 
-    python ml/eval_gemini.py                         # модель из GEMINI_MODEL
-    python ml/eval_gemini.py --model gemini-3.1-pro-preview --workers 4
-Ответы кэшируются в data/gemini/<model>/<id>.json (повторный запуск не тратит запросы; --fresh — заново).
+    python ml/eval_vlm.py                            # модель из VLM_MODEL
+    python ml/eval_vlm.py --model <id> --workers 4
+Ответы кэшируются в data/vlm/<model>/<id>.json (повторный запуск не тратит запросы; --fresh — заново).
 """
 import argparse
 import base64
@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app import config  # noqa: E402,F401  (.env)
-from app.pipeline import gemini, video  # noqa: E402
+from app.pipeline import vlm, video  # noqa: E402
 from ml.labels2 import VIDEOS, unique_videos  # noqa: E402
 
 
@@ -30,7 +30,7 @@ def run_one(v, model, cache: Path, fresh: bool):
     path = VIDEOS / v["file"]
     dur = video.probe(path).duration_sec
     try:
-        ans = gemini.ask(path, dur, model)
+        ans = vlm.ask(path, dur, model)
     except Exception as e:  # noqa: BLE001
         ans = {"_error": str(e)}
     ans["_duration"] = dur
@@ -54,7 +54,7 @@ def _still(path: Path, t: float) -> str:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default=gemini.MODEL)
+    ap.add_argument("--model", default=vlm.MODEL)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--tol", type=float, default=3.0)
     ap.add_argument("--fresh", action="store_true")
@@ -65,7 +65,7 @@ def main():
     vids = unique_videos()
     if a.only:
         vids = [v for v in vids if v["id"] in a.only]
-    cache = config.DATA_DIR / "gemini" / (a.model + (f"-think-{gemini.THINKING}" if gemini.THINKING else "")
+    cache = config.DATA_DIR / "vlm" / (a.model + (f"-think-{vlm.THINKING}" if vlm.THINKING else "")
                                           + (f"-{a.tag}" if a.tag else ""))
     cache.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -80,7 +80,7 @@ def main():
             err += 1
             print(f"{v['id']:6} ОШИБКА {ans['_error'][:150]}")
             continue
-        found = gemini.violations(ans, ans["_duration"])
+        found = vlm.violations(ans, ans["_duration"])
         pred, truth = bool(found), bool(v["tcs"])
         secs.append(ans.get("_sec", 0))
         hit = ""

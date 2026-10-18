@@ -14,9 +14,12 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.7
       - key: ANALYZER
-        value: gemini
-      - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+        value: vlm
+      # идентификатор модели и запасные модели — вставить в панели Render
+      - key: VLM_MODEL
+        sync: false
+      - key: VLM_FALLBACK_MODELS
+        sync: false
       - key: WORKERS
         value: "3"
       - key: SESSION_SECRET
