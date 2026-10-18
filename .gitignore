@@ -17,3 +17,4 @@ models/
 # доступы для жюри — только локально
 *.local.txt
 promo/
+*.local.html

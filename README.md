@@ -1,8 +1,14 @@
-# ForteBank Datathon 26AI — выявление нарушений кассовой дисциплины по видео
+# XScan — выявление нарушений кассовой дисциплины по видео
 
 Локальный AI-сервис: принимает видеозапись работы кассира (`.mov`, ракурс сверху, без звука), находит визуально наблюдаемые признаки возможных нарушений и показывает проверяющему тип события, таймкод, кадры-доказательства, описание и ссылку на норматив РК.
 
 > Результат — подсказка для проверки человеком, а не юридическое или дисциплинарное заключение.
+
+## Стек
+
+| AI / ML | Frontend | Backend | DevOps |
+|---|---|---|---|
+| PyTorch + CUDA<br>Qwen3-VL (локальный VLM)<br>SigLIP 2<br>SAM 2.1 (Meta)<br>KeypointRCNN (позы)<br>OpenCLIP<br>scikit-learn<br>Hugging Face Transformers | HTML5 / CSS3<br>Vanilla JavaScript (SPA, без сборки)<br>Phosphor Icons<br>DiceBear (аватарки агентов)<br>JSZip<br>шрифты Onest, Inter, JetBrains Mono | Python 3.13<br>FastAPI<br>Uvicorn<br>Pydantic<br>OpenCV<br>PyYAML<br>joblib | Render<br>Docker<br>Cloudflare Tunnel<br>GitHub<br>GNU/Linux |
 
 ## Ключевые требования кейса
 
