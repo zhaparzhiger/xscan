@@ -3,10 +3,10 @@
 # Значения с sync: false Render попросит вставить при создании (их нет в git): см. RENDER_SECRETS.local.txt.
 services:
   - type: web
-    name: cashier-ai
+    name: xscan
     runtime: python
     plan: free
-    branch: zhiger
+    branch: main
     buildCommand: pip install -r requirements.txt
     startCommand: sh deploy/render_start.sh
     healthCheckPath: /health
