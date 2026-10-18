@@ -49,7 +49,7 @@ python -m venv .venv
 | `API_KEY` | ключ для заголовка `X-API-Key` |
 | `ANALYZER` | `vlm` — основной режим (мультимодальная модель), `local` — запасной офлайн-режим |
 | `VLM_MODEL`, `VLM_FALLBACK_MODELS` | идентификатор модели и запасные модели через запятую |
-| `GOOGLE_APPLICATION_CREDENTIALS` | путь к JSON сервисного аккаунта для доступа к модели (или `VLM_API_KEY`) |
+| `VLM_CREDENTIALS_FILE` | путь к JSON-файлу сервисного аккаунта для доступа к модели (или `VLM_API_KEY`) |
 | `UI_USERS` | пользователи веб-интерфейса, строку печатает `python scripts/make_user.py <логин>` |
 | `SESSION_SECRET` | секрет подписи сессий |
 | `UI_DEMO_LOGIN`, `UI_DEMO_PASSWORD` | тестовая учётка, показывается на экране входа |

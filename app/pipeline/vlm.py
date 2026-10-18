@@ -131,7 +131,7 @@ def compress(src: Path, dst: Path, width: int | None = None, fps: float = 5.0) -
 
 # Vertex AI через сервисный аккаунт (платные квоты проекта): GOOGLE_APPLICATION_CREDENTIALS=путь к JSON.
 # Иначе — по ключу VLM_API_KEY (у бесплатного проекта 20 запросов в сутки на модель).
-SA_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
+SA_FILE = (os.getenv("VLM_CREDENTIALS_FILE") or os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")).strip()
 VERTEX_LOCATION = os.getenv("VLM_VERTEX_LOCATION", "global")
 _creds = None
 _auth_lock = threading.Lock()
